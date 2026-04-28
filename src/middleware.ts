@@ -36,7 +36,8 @@ export async function middleware(request: NextRequest) {
     !user &&
     (pathname.startsWith("/dashboard") ||
       pathname.startsWith("/onboarding") ||
-      pathname.startsWith("/consultations"))
+      pathname.startsWith("/consultations") ||
+      pathname.startsWith("/settings"))
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -60,11 +61,12 @@ export async function middleware(request: NextRequest) {
 
     const hasCouple = membership !== null;
 
-    // 未所属 + /dashboard or /consultations → /onboarding へ
+    // 未所属 + /dashboard, /consultations, /settings → /onboarding へ
     if (
       !hasCouple &&
       (pathname.startsWith("/dashboard") ||
-        pathname.startsWith("/consultations"))
+        pathname.startsWith("/consultations") ||
+        pathname.startsWith("/settings"))
     ) {
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
@@ -89,6 +91,8 @@ export const config = {
     "/onboarding",
     "/consultations/:path*",
     "/consultations",
+    "/settings/:path*",
+    "/settings",
     "/login",
   ],
 };
