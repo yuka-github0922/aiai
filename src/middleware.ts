@@ -34,7 +34,9 @@ export async function middleware(request: NextRequest) {
   // 未ログイン → /login へ
   if (
     !user &&
-    (pathname.startsWith("/dashboard") || pathname.startsWith("/onboarding"))
+    (pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/onboarding") ||
+      pathname.startsWith("/consultations"))
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -58,8 +60,12 @@ export async function middleware(request: NextRequest) {
 
     const hasCouple = membership !== null;
 
-    // 未所属 + /dashboard → /onboarding へ
-    if (!hasCouple && pathname.startsWith("/dashboard")) {
+    // 未所属 + /dashboard or /consultations → /onboarding へ
+    if (
+      !hasCouple &&
+      (pathname.startsWith("/dashboard") ||
+        pathname.startsWith("/consultations"))
+    ) {
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
       return NextResponse.redirect(url);
@@ -77,5 +83,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/onboarding", "/login"],
+  matcher: [
+    "/dashboard/:path*",
+    "/onboarding/:path*",
+    "/onboarding",
+    "/consultations/:path*",
+    "/consultations",
+    "/login",
+  ],
 };

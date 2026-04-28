@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "./logout-button";
 import InviteCodeCopy from "./invite-code-copy";
@@ -123,6 +124,19 @@ export default async function DashboardPage() {
             </p>
           </section>
         )}
+
+        {/* 相談チャット */}
+        <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+            相談チャット
+          </p>
+          <Link
+            href="/consultations"
+            className="inline-block bg-rose-500 hover:bg-rose-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            相談一覧を見る
+          </Link>
+        </section>
       </div>
     </main>
   );
