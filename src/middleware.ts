@@ -25,30 +25,57 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // セッションを最新に保つために必ず getUser() を呼ぶ
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
 
-  // 未ログインで /dashboard 以下にアクセスしたら /login へ
-  if (!user && pathname.startsWith("/dashboard")) {
+  // 未ログイン → /login へ
+  if (
+    !user &&
+    (pathname.startsWith("/dashboard") || pathname.startsWith("/onboarding"))
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // ログイン済みで /login にアクセスしたら /dashboard へ
+  // ログイン済みで /login → /dashboard へ（カップルチェックは /dashboard で行う）
   if (user && pathname === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
+  // ログイン済みの場合、カップル所属チェック
+  if (user) {
+    const { data: membership } = await supabase
+      .from("couple_members")
+      .select("couple_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const hasCouple = membership !== null;
+
+    // 未所属 + /dashboard → /onboarding へ
+    if (!hasCouple && pathname.startsWith("/dashboard")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding";
+      return NextResponse.redirect(url);
+    }
+
+    // 所属済み + /onboarding → /dashboard へ
+    if (hasCouple && pathname.startsWith("/onboarding")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login"],
+  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/onboarding", "/login"],
 };
