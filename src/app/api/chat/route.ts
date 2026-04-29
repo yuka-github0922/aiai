@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
   // ※ relationship_insights に authenticated は直接アクセス不可
   const { data: partnerInsightRows } = await supabase.rpc(
     "get_partner_insights",
-    { limit_count: 10 }
+    { limit_count: 30 }
   );
   const partnerInsights: PartnerInsightRow[] = Array.isArray(partnerInsightRows)
     ? (partnerInsightRows as PartnerInsightRow[])
