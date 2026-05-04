@@ -24,3 +24,25 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes floatHeart {
+  0% {
+    transform: translateY(0px) scale(1) rotate(-8deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-320px) scale(0.75) rotate(8deg);
+    opacity: 0;
+  }
+}
+
+.heart-float {
+  animation: floatHeart ease-in-out infinite;
+  will-change: transform, opacity;
+}
