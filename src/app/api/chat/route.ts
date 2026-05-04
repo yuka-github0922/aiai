@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import OpenAI from "openai";
+import { encrypt, decryptMessageBody } from "@/lib/encryption";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -132,10 +133,10 @@ export async function POST(request: NextRequest) {
   }
 
   // --- 自分の会話履歴を取得（最新 20 件）---
-  // ※ パートナーの messages.body は一切 SELECT しない
-  const { data: messages, error: messagesError } = await supabase
+  // ※ パートナーの messages は一切 SELECT しない
+  const { data: rawMessages, error: messagesError } = await supabase
     .from("messages")
-    .select("role, body")
+    .select("role, body_encrypted, body_iv, body_auth_tag")
     .eq("consultation_id", consultationId)
     .order("created_at", { ascending: true })
     .limit(20);
@@ -148,12 +149,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!messages || messages.length === 0) {
+  if (!rawMessages || rawMessages.length === 0) {
     return NextResponse.json(
       { error: "No messages found" },
       { status: 400 }
     );
   }
+
+  const messages = rawMessages.map((row) => ({
+    role: row.role as string,
+    body: decryptMessageBody(row),
+  }));
 
   // --- パートナーの固定プロフィールを取得（SECURITY DEFINER RPC 経由のみ）---
   const { data: partnerSummaryRows } = await supabase.rpc("get_partner_summary");
@@ -195,12 +201,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // --- AI 返答を DB へ保存（SECURITY DEFINER RPC）---
+  // --- AI 返答を暗号化して DB へ保存（SECURITY DEFINER RPC）---
+  let aiPayload: ReturnType<typeof encrypt>;
+  try {
+    aiPayload = encrypt(aiText);
+  } catch (err) {
+    console.error("[api/chat] encrypt AI response error:", err);
+    return NextResponse.json(
+      { error: "Encryption failed" },
+      { status: 500 }
+    );
+  }
+
   const { data: newMessageId, error: saveError } = await supabase.rpc(
     "save_assistant_message",
     {
       consultation_id_param: consultationId,
-      body_param: aiText,
+      body_encrypted_param:  aiPayload.encrypted,
+      body_iv_param:         aiPayload.iv,
+      body_auth_tag_param:   aiPayload.authTag,
     }
   );
 

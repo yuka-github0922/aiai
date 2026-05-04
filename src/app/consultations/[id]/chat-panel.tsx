@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 type Message = {
   id: string;
@@ -44,30 +43,32 @@ export default function ChatPanel({
     setSending(true);
     setError(null);
 
-    // 1. ユーザーメッセージを RPC で保存
-    const supabase = createClient();
-    const { data: newId, error: rpcError } = await supabase.rpc("send_message", {
-      consultation_id_param: consultationId,
-      body_param: body,
-    });
+    // 1. サーバー経由でユーザーメッセージを暗号化保存
+    let userMessage: Message;
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ consultationId, message: body }),
+      });
 
-    setSending(false);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? `HTTP ${res.status}`);
+      }
 
-    if (rpcError) {
-      console.error("send_message error:", rpcError);
+      userMessage = await res.json();
+    } catch (err) {
+      console.error("send message error:", err);
+      setSending(false);
       setError("メッセージの送信に失敗しました。もう一度お試しください。");
       setInput(body);
       return;
     }
 
+    setSending(false);
+
     // 2. ローカル state にオプティミスティック追加
-    const userMessage: Message = {
-      id: newId as string,
-      user_id: userId,
-      role: "user",
-      body,
-      created_at: new Date().toISOString(),
-    };
     setMessages((prev) => [...prev, userMessage]);
 
     // 3. AI 返答を取得

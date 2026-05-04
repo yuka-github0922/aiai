@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { decryptMessageBody } from "@/lib/encryption";
 import ChatPanel from "./chat-panel";
 
 type Props = {
@@ -32,15 +33,23 @@ export default async function ConsultationPage({ params }: Props) {
   // 自分の相談でなければ一覧へ
   if (consultation.user_id !== user.id) redirect("/consultations");
 
-  const { data: messages, error: messagesError } = await supabase
+  const { data: rawMessages, error: messagesError } = await supabase
     .from("messages")
-    .select("id, user_id, role, body, created_at")
+    .select("id, user_id, role, body_encrypted, body_iv, body_auth_tag, created_at")
     .eq("consultation_id", id)
     .order("created_at", { ascending: true });
 
   if (messagesError) {
     console.error("messages fetch error:", messagesError);
   }
+
+  const messages = (rawMessages ?? []).map((row) => ({
+    id:         row.id,
+    user_id:    row.user_id,
+    role:       row.role,
+    body:       decryptMessageBody(row),
+    created_at: row.created_at,
+  }));
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col">
@@ -61,7 +70,7 @@ export default async function ConsultationPage({ params }: Props) {
       <div className="flex-1 flex flex-col max-w-2xl w-full mx-auto overflow-hidden">
         <ChatPanel
           consultationId={id}
-          initialMessages={messages ?? []}
+          initialMessages={messages}
           userId={user.id}
         />
       </div>
