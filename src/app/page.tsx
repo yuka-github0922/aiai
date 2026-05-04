@@ -43,12 +43,20 @@ export default async function TopPage() {
           AIがふたりのことを少しずつ学んで、より的確な助言をお届けします。
         </p>
 
-        <Link
-          href="/login"
-          className="relative bg-rose-500 hover:bg-rose-600 text-white font-semibold px-8 py-3 rounded-full text-sm transition-colors shadow-sm"
-        >
-          はじめる（無料）
-        </Link>
+        <div className="relative flex flex-col sm:flex-row items-center gap-3">
+          <Link
+            href="/signup"
+            className="bg-rose-500 hover:bg-rose-600 text-white font-semibold px-8 py-3 rounded-full text-sm transition-colors shadow-sm"
+          >
+            はじめる（無料）
+          </Link>
+          <Link
+            href="/login"
+            className="text-sm text-gray-500 hover:text-rose-500 transition-colors"
+          >
+            ログインはこちら →
+          </Link>
+        </div>
       </section>
 
       {/* 特徴 */}
@@ -137,7 +145,7 @@ export default async function TopPage() {
           まずは自分のアカウントを作るところから。
         </p>
         <Link
-          href="/login"
+          href="/signup"
           className="bg-rose-500 hover:bg-rose-600 text-white font-semibold px-8 py-3 rounded-full text-sm transition-colors shadow-sm"
         >
           AiAi をはじめる

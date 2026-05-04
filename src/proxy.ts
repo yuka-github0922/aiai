@@ -44,8 +44,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // ログイン済みで /login → /dashboard へ（カップルチェックは /dashboard で行う）
-  if (user && pathname === "/login") {
+  // ログイン済みで /login or /signup → /dashboard へ
+  if (user && (pathname === "/login" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
@@ -94,5 +94,6 @@ export const config = {
     "/settings/:path*",
     "/settings",
     "/login",
+    "/signup",
   ],
 };
