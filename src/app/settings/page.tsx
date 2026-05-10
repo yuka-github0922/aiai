@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AiSummaryForm from "./ai-summary-form";
+import AnniversarySection from "./anniversary-section";
 
 export type AiSummaryRow = {
   communication_style: string | null;
@@ -11,6 +12,7 @@ export type AiSummaryRow = {
   birth_year:          number | null;
   mbti:                string | null;
   basic_values:        string | null;
+  animal_zodiac:       string | null;
 };
 
 export default async function SettingsPage() {
@@ -22,14 +24,32 @@ export default async function SettingsPage() {
 
   if (!user) redirect("/login");
 
-  // 自分の ai_summary だけ読む（RLS: user_id = auth.uid()）
-  const { data: summary } = await supabase
-    .from("ai_summaries")
-    .select(
-      "communication_style, comfortable_phrases, avoid_phrases, notes, gender, birth_year, mbti, basic_values"
-    )
+  // カップル所属確認（記念日取得に couple_id が必要）
+  const { data: membership } = await supabase
+    .from("couple_members")
+    .select("couple_id")
     .eq("user_id", user.id)
     .maybeSingle();
+
+  const [{ data: summary }, { data: profile }, { data: anniversaries }] = await Promise.all([
+    supabase
+      .from("ai_summaries")
+      .select("communication_style, comfortable_phrases, avoid_phrases, notes, gender, birth_year, mbti, basic_values, animal_zodiac")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("partner_nickname")
+      .eq("id", user.id)
+      .maybeSingle(),
+    membership
+      ? supabase
+          .from("anniversaries")
+          .select("id, title, date")
+          .eq("couple_id", membership.couple_id)
+          .order("date", { ascending: true })
+      : Promise.resolve({ data: [] }),
+  ]);
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -49,7 +69,21 @@ export default async function SettingsPage() {
             パートナーが相談するとき、AIがあなたのことをより深く理解するために使います。
           </p>
 
-          <AiSummaryForm initialSummary={summary as AiSummaryRow | null} />
+          <AiSummaryForm
+            initialSummary={summary as AiSummaryRow | null}
+            initialPartnerNickname={(profile as { partner_nickname: string | null } | null)?.partner_nickname ?? ""}
+          />
+        </section>
+
+        {/* 記念日 */}
+        <section className="bg-white rounded-2xl border border-gray-200 p-6 mt-4">
+          <h2 className="text-base font-semibold text-gray-700 mb-1">記念日</h2>
+          <p className="text-xs text-gray-400 mb-5">
+            登録した記念日はナッジ（AiAiからのひとこと）に活用されます。
+          </p>
+          <AnniversarySection
+            initialAnniversaries={(anniversaries ?? []) as { id: string; title: string; date: string }[]}
+          />
         </section>
       </div>
     </main>

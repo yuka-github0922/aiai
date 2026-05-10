@@ -32,16 +32,14 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-rose-50 px-4">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
       {/* ロゴ */}
       <Link href="/" className="flex flex-col items-center mb-8 group">
-        <span className="text-4xl mb-1">♥</span>
-        <span className="text-xl font-bold text-rose-500 tracking-tight group-hover:text-rose-600 transition-colors">
-          AiAi
-        </span>
+        <span className="text-3xl mb-1 text-rose-400">♥</span>
+        <span className="text-xl font-bold text-gray-800 tracking-tight">AiAi</span>
       </Link>
 
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-rose-100 p-8">
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
         <h1 className="text-xl font-bold text-gray-800 mb-1">おかえりなさい</h1>
         <p className="text-sm text-gray-400 mb-6">アカウントにログインしてください</p>
 

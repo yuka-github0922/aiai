@@ -14,6 +14,16 @@ const BASE_INSTRUCTIONS =
   "カップルのすれ違いをやさしくほどき、パートナーとの関係をより良くするアドバイスを提供してください。" +
   "返答は簡潔にまとめ、押しつけがましくならないようにしてください。";
 
+// 具体メモ抽出用プロンプト
+const MEMO_EXTRACTION_INSTRUCTIONS =
+  "以下のユーザーメッセージから、パートナーの「欲しいもの」「行きたい場所」「食べたいもの」「好きなもの」「記念日やデートに使えそうな具体情報」を1文で抽出してください。\n" +
+  "ルール：\n" +
+  "- 「〇〇が欲しい」「〇〇に行きたい」「〇〇を食べたい」「〇〇が好き」などの自然な形式で出力\n" +
+  "- 複数ある場合は最も具体的なものを1つだけ選ぶ\n" +
+  "- 抽出できない場合は「なし」とだけ返す\n" +
+  "- 推測で補わない（メッセージに明示されているものだけ）\n" +
+  "- 1文のみ出力（前置き・説明不要）";
+
 // インサイト抽出用プロンプト
 const INSIGHT_EXTRACTION_INSTRUCTIONS =
   "以下のユーザーメッセージから、その人が本音として感じていることや望んでいることを1文で要約してください。\n" +
@@ -36,6 +46,7 @@ type PartnerSummaryRow = {
   birth_year:           number | null;
   mbti:                 string | null;
   basic_values:         string | null;
+  animal_zodiac:        string | null;
 };
 
 type PartnerInsightRow = {
@@ -58,6 +69,8 @@ function buildInstructions(
       profileLines.push(`・生まれ年: ${partnerSummary.birth_year}年頃`);
     if (partnerSummary.mbti)
       profileLines.push(`・MBTI: ${partnerSummary.mbti}`);
+    if (partnerSummary.animal_zodiac)
+      profileLines.push(`・動物占い: ${partnerSummary.animal_zodiac}`);
     if (partnerSummary.basic_values)
       profileLines.push(`・基本価値観: ${partnerSummary.basic_values}`);
     if (partnerSummary.communication_style)
@@ -65,7 +78,7 @@ function buildInstructions(
     if (partnerSummary.comfortable_phrases)
       profileLines.push(`・安心しやすい言葉: ${partnerSummary.comfortable_phrases}`);
     if (partnerSummary.avoid_phrases)
-      profileLines.push(`・避けたい言い方: ${partnerSummary.avoid_phrases}`);
+      profileLines.push(`・言われると傷つく言葉: ${partnerSummary.avoid_phrases}`);
     if (partnerSummary.notes)
       profileLines.push(`・その他メモ: ${partnerSummary.notes}`);
   }
@@ -242,6 +255,9 @@ export async function POST(request: NextRequest) {
     extractAndSaveInsight(supabase, latestUserMessage.body).catch((err) => {
       console.error("[api/chat] insight extraction failed (non-fatal):", err);
     });
+    extractAndSaveMemo(supabase, latestUserMessage.body).catch((err) => {
+      console.error("[api/chat] memo extraction failed (non-fatal):", err);
+    });
   }
 
   return NextResponse.json({
@@ -250,6 +266,30 @@ export async function POST(request: NextRequest) {
     body: aiText,
     created_at: new Date().toISOString(),
   });
+}
+
+// 具体メモ抽出・保存（fire-and-forget）
+async function extractAndSaveMemo(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userMessageBody: string
+): Promise<void> {
+  const response = await openai.responses.create({
+    model: "gpt-4o-mini",
+    instructions: MEMO_EXTRACTION_INSTRUCTIONS,
+    input: userMessageBody,
+  });
+
+  const content = response.output_text?.trim();
+  if (!content || content === "なし") return;
+
+  const { error } = await supabase.rpc("save_partner_memo", {
+    content_param: content,
+  });
+
+  if (error) {
+    console.error("[api/chat] save_partner_memo error:", error);
+  }
 }
 
 // インサイト抽出・保存（AI 返答返却後にバックグラウンドで実行）

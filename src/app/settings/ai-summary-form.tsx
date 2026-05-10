@@ -12,21 +12,26 @@ const MBTI_OPTIONS = [
   "ISTP", "ISFP", "ESTP", "ESFP",
 ];
 
+
 const GENDER_OPTIONS = ["男性", "女性", "ノンバイナリー", "回答しない"];
 
 const CURRENT_YEAR = new Date().getFullYear();
 
 type Props = {
   initialSummary: AiSummaryRow | null;
+  initialPartnerNickname: string;
 };
 
-export default function AiSummaryForm({ initialSummary }: Props) {
+export default function AiSummaryForm({ initialSummary, initialPartnerNickname }: Props) {
+  const [partnerNickname, setPartnerNickname] = useState(initialPartnerNickname);
+
   // --- 基本プロフィール ---
   const [gender, setGender] = useState(initialSummary?.gender ?? "");
   const [birthYear, setBirthYear] = useState(
     initialSummary?.birth_year ? String(initialSummary.birth_year) : ""
   );
   const [mbti, setMbti] = useState(initialSummary?.mbti ?? "");
+  const [animalZodiac, setAnimalZodiac] = useState(initialSummary?.animal_zodiac ?? "");
   const [basicValues, setBasicValues] = useState(
     initialSummary?.basic_values ?? ""
   );
@@ -61,6 +66,13 @@ export default function AiSummaryForm({ initialSummary }: Props) {
     }
 
     const supabase = createClient();
+
+    // パートナーの呼び名を profiles に保存
+    await supabase
+      .from("profiles")
+      .update({ partner_nickname: partnerNickname.trim() || null })
+      .eq("id", (await supabase.auth.getUser()).data.user!.id);
+
     const { error: rpcError } = await supabase.rpc("upsert_ai_summary", {
       communication_style_param: communicationStyle.trim() || null,
       comfortable_phrases_param: comfortablePhrases.trim() || null,
@@ -70,6 +82,7 @@ export default function AiSummaryForm({ initialSummary }: Props) {
       birth_year_param:          parsedBirthYear,
       mbti_param:                mbti || null,
       basic_values_param:        basicValues.trim() || null,
+      animal_zodiac_param:       animalZodiac || null,
     });
 
     setSaving(false);
@@ -118,7 +131,7 @@ export default function AiSummaryForm({ initialSummary }: Props) {
     },
     {
       id: "avoid_phrases",
-      label: "避けたい言い方",
+      label: "言われると傷つく言葉",
       placeholder: '例：「でも」「だって」など言い訳に聞こえる言葉が苦手。',
       value: avoidPhrases,
       onChange: setAvoidPhrases,
@@ -134,6 +147,26 @@ export default function AiSummaryForm({ initialSummary }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+
+      {/* --- パートナーの呼び名 --- */}
+      <div>
+        <label htmlFor="partner_nickname" className="block text-sm font-medium text-gray-700 mb-1">
+          パートナーの呼び名
+        </label>
+        <p className="text-xs text-gray-400 mb-2">
+          あなたがパートナーをどう呼んでいるか入力してください。ダッシュボードに表示されます。
+        </p>
+        <input
+          id="partner_nickname"
+          type="text"
+          value={partnerNickname}
+          onChange={(e) => setPartnerNickname(e.target.value)}
+          placeholder="例：たけちゃん、ゆい"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+        />
+      </div>
+
+      <hr className="border-gray-100" />
 
       {/* --- 基本プロフィール --- */}
       <div>
@@ -177,7 +210,7 @@ export default function AiSummaryForm({ initialSummary }: Props) {
           </div>
 
           {/* MBTI */}
-          <div className="col-span-2">
+          <div>
             <label htmlFor="mbti" className="block text-sm font-medium text-gray-700 mb-1">
               MBTI
             </label>
@@ -192,6 +225,21 @@ export default function AiSummaryForm({ initialSummary }: Props) {
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
+          </div>
+
+          {/* 動物占い */}
+          <div>
+            <label htmlFor="animal_zodiac" className="block text-sm font-medium text-gray-700 mb-1">
+              動物占い
+            </label>
+            <input
+              id="animal_zodiac"
+              type="text"
+              value={animalZodiac}
+              onChange={(e) => setAnimalZodiac(e.target.value)}
+              placeholder="例：束縛を嫌う黒豹"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+            />
           </div>
         </div>
       </div>
@@ -233,7 +281,7 @@ export default function AiSummaryForm({ initialSummary }: Props) {
 
       {saved && (
         <p className="text-sm text-green-600 bg-green-50 rounded-lg px-3 py-2">
-          保存しました
+          保存しました ✓
         </p>
       )}
 

@@ -50,13 +50,13 @@ export default function SignupPage() {
 
   if (sent) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-rose-50 px-4">
+      <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
         <Link href="/" className="flex flex-col items-center mb-8">
-          <span className="text-4xl mb-1">♥</span>
-          <span className="text-xl font-bold text-rose-500 tracking-tight">AiAi</span>
+          <span className="text-3xl mb-1 text-rose-400">♥</span>
+          <span className="text-xl font-bold text-gray-800 tracking-tight">AiAi</span>
         </Link>
 
-        <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-rose-100 p-8 text-center">
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
           <div className="text-4xl mb-4">📩</div>
           <h2 className="text-lg font-bold text-gray-800 mb-2">確認メールを送りました</h2>
           <p className="text-sm text-gray-500 leading-relaxed mb-6">
@@ -75,16 +75,14 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-rose-50 px-4">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
       {/* ロゴ */}
       <Link href="/" className="flex flex-col items-center mb-8 group">
-        <span className="text-4xl mb-1">♥</span>
-        <span className="text-xl font-bold text-rose-500 tracking-tight group-hover:text-rose-600 transition-colors">
-          AiAi
-        </span>
+        <span className="text-3xl mb-1 text-rose-400">♥</span>
+        <span className="text-xl font-bold text-gray-800 tracking-tight">AiAi</span>
       </Link>
 
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-rose-100 p-8">
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
         <h1 className="text-xl font-bold text-gray-800 mb-1">アカウント作成</h1>
         <p className="text-sm text-gray-400 mb-6">無料ではじめましょう</p>
 
