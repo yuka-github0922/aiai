@@ -10,9 +10,10 @@ const openai = new OpenAI({
 
 const BASE_INSTRUCTIONS =
   "あなたはパートナーとの関係に寄り添うAIアドバイザーです。" +
-  "ユーザーの悩みに共感し、具体的で温かいアドバイスを日本語で提供してください。" +
+  "ユーザーの悩みに共感し、具体的で温かいアドバイスを提供してください。" +
   "カップルのすれ違いをやさしくほどき、パートナーとの関係をより良くするアドバイスを提供してください。" +
-  "返答は簡潔にまとめ、押しつけがましくならないようにしてください。";
+  "返答は簡潔にまとめ、押しつけがましくならないようにしてください。" +
+  "【重要】ユーザーが何語で話しかけても、必ず日本語で返答してください。英語・その他の言語での返答は禁止です。";
 
 // 具体メモ抽出用プロンプト
 const MEMO_EXTRACTION_INSTRUCTIONS =
@@ -58,9 +59,14 @@ type PartnerInsightRow = {
 
 function buildInstructions(
   partnerSummary: PartnerSummaryRow | null,
-  partnerInsights: PartnerInsightRow[]
+  partnerInsights: PartnerInsightRow[],
+  consultationTitle: string | null
 ): string {
   let instructions = BASE_INSTRUCTIONS;
+
+  if (consultationTitle) {
+    instructions += `\n\n【この相談スレッドのテーマ】\n${consultationTitle}\n※ 会話の文脈が不明な場合も、このテーマに沿った返答をしてください。`;
+  }
 
   // --- 固定プロフィール ---
   const profileLines: string[] = [];
@@ -147,14 +153,21 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // --- 自分の会話履歴を取得（最新 20 件）---
+  // --- スレッドタイトルを取得 ---
+  const { data: consultationRow } = await supabase
+    .from("consultations")
+    .select("title")
+    .eq("id", consultationId)
+    .maybeSingle();
+  const consultationTitle = consultationRow?.title ?? null;
+
+  // --- 自分の会話履歴を取得（先頭3件 + 最新20件）---
   // ※ パートナーの messages は一切 SELECT しない
   const { data: rawMessages, error: messagesError } = await supabase
     .from("messages")
-    .select("role, body_encrypted, body_iv, body_auth_tag")
+    .select("id, role, body_encrypted, body_iv, body_auth_tag, created_at")
     .eq("consultation_id", consultationId)
-    .order("created_at", { ascending: true })
-    .limit(50);
+    .order("created_at", { ascending: true });
 
   if (messagesError) {
     console.error("[api/chat] messages fetch error:", messagesError);
@@ -171,7 +184,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const messages = rawMessages.map((row) => ({
+  // 先頭3件 + 最新20件を合成（重複排除）
+  const first3 = rawMessages.slice(0, 3);
+  const last20 = rawMessages.slice(-50);
+  const mergedIds = new Set<string>();
+  const merged = [...first3, ...last20].filter((row) => {
+    if (mergedIds.has(row.id)) return false;
+    mergedIds.add(row.id);
+    return true;
+  });
+
+  const messages = merged.map((row) => ({
     role: row.role as string,
     body: decryptMessageBody(row),
   }));
@@ -203,7 +226,7 @@ export async function POST(request: NextRequest) {
   try {
     const aiResponse = await openai.responses.create({
       model: "gpt-5.5",
-      instructions: buildInstructions(partnerSummary, partnerInsights),
+      instructions: buildInstructions(partnerSummary, partnerInsights, consultationTitle),
       input,
     });
     aiText = aiResponse.output_text;
