@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
     .select("role, body_encrypted, body_iv, body_auth_tag")
     .eq("consultation_id", consultationId)
     .order("created_at", { ascending: true })
-    .limit(20);
+    .limit(50);
 
   if (messagesError) {
     console.error("[api/chat] messages fetch error:", messagesError);
