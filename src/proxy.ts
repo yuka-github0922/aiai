@@ -69,15 +69,9 @@ export async function proxy(request: NextRequest) {
     }
 
     if (hasCouple) {
-      // パートナー参加チェック
-      const { data: partnerMembership } = await supabase
-        .from("couple_members")
-        .select("user_id")
-        .eq("couple_id", membership.couple_id)
-        .neq("user_id", user.id)
-        .maybeSingle();
-
-      const hasPartner = partnerMembership !== null;
+      // パートナー参加チェック（RLS回避のためSECURITY DEFINER RPC経由）
+      const { data: hasPartnerResult } = await supabase.rpc("has_partner");
+      const hasPartner = hasPartnerResult === true;
 
       // カップルあり・パートナー未参加 → /onboarding のみ許可
       if (!hasPartner && !pathname.startsWith("/onboarding")) {
