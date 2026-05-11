@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
   let aiText: string;
   try {
     const aiResponse = await openai.responses.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5.5",
       instructions: buildInstructions(partnerSummary, partnerInsights),
       input,
     });
@@ -275,7 +275,7 @@ async function extractAndSaveMemo(
   userMessageBody: string
 ): Promise<void> {
   const response = await openai.responses.create({
-    model: "gpt-4o-mini",
+    model: "gpt-4.1-mini",
     instructions: MEMO_EXTRACTION_INSTRUCTIONS,
     input: userMessageBody,
   });
@@ -299,7 +299,7 @@ async function extractAndSaveInsight(
   userMessageBody: string
 ): Promise<void> {
   const extractResponse = await openai.responses.create({
-    model: "gpt-4o-mini",
+    model: "gpt-4.1-mini",
     instructions: INSIGHT_EXTRACTION_INSTRUCTIONS,
     input: userMessageBody,
   });

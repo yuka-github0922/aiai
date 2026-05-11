@@ -145,7 +145,7 @@ export async function generateNudgeWithAI(
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const response = await openai.responses.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-mini",
       instructions: NUDGE_SYSTEM_PROMPT,
       input,
     });
