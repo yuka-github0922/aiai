@@ -5,6 +5,7 @@ import LogoutButton from "./logout-button";
 import InviteCodeCopy from "./invite-code-copy";
 import PartnerNicknameEditor from "./partner-nickname-editor";
 import { generateNudgeWithAI, type InsightRow, type AnniversaryRow, type MemoRow } from "@/lib/nudge";
+import { decryptHintBody } from "@/lib/encryption";
 
 type CoupleRow = {
   id: string;
@@ -94,8 +95,19 @@ export default async function DashboardPage() {
       .limit(10),
   ]);
 
+  type RawInsightRow = {
+    partner_hint_encrypted: string | null;
+    partner_hint_iv:        string | null;
+    partner_hint_auth_tag:  string | null;
+    created_at:             string;
+  };
+  const decryptedInsights: InsightRow[] = (rawInsights ?? []).map((r: RawInsightRow) => ({
+    partner_hint: decryptHintBody(r),
+    created_at:   r.created_at,
+  }));
+
   const nudgeMessage = await generateNudgeWithAI(
-    (rawInsights ?? []) as InsightRow[],
+    decryptedInsights,
     (rawAnniversaries ?? []) as AnniversaryRow[],
     (rawMemos ?? []) as MemoRow[]
   );

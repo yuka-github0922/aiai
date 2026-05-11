@@ -61,23 +61,37 @@ export async function proxy(request: NextRequest) {
 
     const hasCouple = membership !== null;
 
-    // 未所属 + /dashboard, /consultations, /settings → /onboarding へ
-    if (
-      !hasCouple &&
-      (pathname.startsWith("/dashboard") ||
-        pathname.startsWith("/consultations") ||
-        pathname.startsWith("/settings"))
-    ) {
+    // カップル未所属 → /onboarding へ
+    if (!hasCouple && !pathname.startsWith("/onboarding")) {
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
       return NextResponse.redirect(url);
     }
 
-    // 所属済み + /onboarding → /dashboard へ
-    if (hasCouple && pathname.startsWith("/onboarding")) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      return NextResponse.redirect(url);
+    if (hasCouple) {
+      // パートナー参加チェック
+      const { data: partnerMembership } = await supabase
+        .from("couple_members")
+        .select("user_id")
+        .eq("couple_id", membership.couple_id)
+        .neq("user_id", user.id)
+        .maybeSingle();
+
+      const hasPartner = partnerMembership !== null;
+
+      // カップルあり・パートナー未参加 → /onboarding のみ許可
+      if (!hasPartner && !pathname.startsWith("/onboarding")) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/onboarding";
+        return NextResponse.redirect(url);
+      }
+
+      // カップルあり・パートナー参加済み → /onboarding はブロック
+      if (hasPartner && pathname.startsWith("/onboarding")) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/dashboard";
+        return NextResponse.redirect(url);
+      }
     }
   }
 

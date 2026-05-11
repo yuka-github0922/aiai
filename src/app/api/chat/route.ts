@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import OpenAI from "openai";
-import { encrypt, decryptMessageBody } from "@/lib/encryption";
+import { encrypt, decryptMessageBody, decryptHintBody } from "@/lib/encryption";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -50,8 +50,10 @@ type PartnerSummaryRow = {
 };
 
 type PartnerInsightRow = {
-  partner_hint: string;
-  created_at:   string;
+  partner_hint_encrypted: string | null;
+  partner_hint_iv:        string | null;
+  partner_hint_auth_tag:  string | null;
+  created_at:             string;
 };
 
 function buildInstructions(
@@ -90,7 +92,7 @@ function buildInstructions(
 
   // --- 最近の時系列ヒント ---
   if (partnerInsights.length > 0) {
-    const insightLines = partnerInsights.map((i) => `・${i.partner_hint}`);
+    const insightLines = partnerInsights.map((i) => `・${decryptHintBody(i)}`);
     instructions +=
       "\n\n【パートナーの最近の傾向（最新順）】\n" +
       "※ 必ず守ること：「パートナーがこう言っていた」「相手がこう話していた」という表現は絶対に使わない。" +
@@ -307,8 +309,11 @@ async function extractAndSaveInsight(
   const hint = extractResponse.output_text?.trim();
   if (!hint || hint === "なし") return;
 
+  const payload = encrypt(hint);
   const { error } = await supabase.rpc("save_insight", {
-    partner_hint_param: hint,
+    partner_hint_encrypted_param: payload.encrypted,
+    partner_hint_iv_param:        payload.iv,
+    partner_hint_auth_tag_param:  payload.authTag,
   });
 
   if (error) {

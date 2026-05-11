@@ -74,3 +74,23 @@ export function decryptMessageBody(row: {
     authTag:   row.body_auth_tag,
   });
 }
+
+/**
+ * DB から取得した relationship_insights 行を復号する。
+ * partner_hint_encrypted / partner_hint_iv / partner_hint_auth_tag が必須。
+ */
+export function decryptHintBody(row: {
+  partner_hint_encrypted: string | null;
+  partner_hint_iv:        string | null;
+  partner_hint_auth_tag:  string | null;
+}): string {
+  if (!row.partner_hint_encrypted || !row.partner_hint_iv || !row.partner_hint_auth_tag) {
+    console.error("decryptHintBody: encrypted fields are missing", row);
+    return "";
+  }
+  return decrypt({
+    encrypted: row.partner_hint_encrypted,
+    iv:        row.partner_hint_iv,
+    authTag:   row.partner_hint_auth_tag,
+  });
+}

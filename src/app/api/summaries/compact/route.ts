@@ -2,15 +2,18 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import OpenAI from "openai";
+import { decryptHintBody } from "@/lib/encryption";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const MIN_INSIGHTS_TO_COMPACT = 5;
 
 type InsightRow = {
-  id:           string;
-  partner_hint: string;
-  created_at:   string;
+  id:                     string;
+  partner_hint_encrypted: string | null;
+  partner_hint_iv:        string | null;
+  partner_hint_auth_tag:  string | null;
+  created_at:             string;
 };
 
 type AiSummaryRow = {
@@ -45,7 +48,7 @@ function buildCompactionPrompt(
     : "（まだ設定なし）";
 
   const insightLines = insights
-    .map((i) => `・${i.partner_hint}`)
+    .map((i) => `・${decryptHintBody(i)}`)
     .join("\n");
 
   return (
