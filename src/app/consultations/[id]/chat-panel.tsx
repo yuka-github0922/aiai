@@ -27,10 +27,30 @@ export default function ChatPanel({
   const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, aiLoading]);
+
+  // textarea の高さを内容に合わせて自動調整
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      // タッチデバイス（スマホ）では Enter で改行、送信はボタンのみ
+      const isTouchDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+      if (!isTouchDevice) {
+        e.preventDefault();
+        handleSend(e as unknown as React.FormEvent);
+      }
+    }
+  }
 
   const isDisabled = sending || aiLoading;
 
@@ -40,6 +60,7 @@ export default function ChatPanel({
 
     const body = input.trim();
     setInput("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
     setSending(true);
     setError(null);
 
@@ -152,13 +173,15 @@ export default function ChatPanel({
         onSubmit={handleSend}
         className="border-t border-gray-200 px-4 py-3 flex gap-2 bg-white"
       >
-        <input
-          type="text"
+        <textarea
+          ref={textareaRef}
+          rows={1}
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder={aiLoading ? "AIが考え中..." : "メッセージを入力..."}
           disabled={isDisabled}
-          className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 disabled:bg-gray-100 disabled:text-gray-400"
+          className="flex-1 border border-gray-300 rounded-2xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 disabled:bg-gray-100 disabled:text-gray-400 resize-none overflow-hidden max-h-40 leading-relaxed"
         />
         <button
           type="submit"
