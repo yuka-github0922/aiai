@@ -334,7 +334,7 @@ async function extractAndSaveMemo(
   userMessageBody: string
 ): Promise<void> {
   const response = await openai.responses.create({
-    model: "gpt-4.1-mini",
+    model: "gpt-5.5",
     instructions: MEMO_EXTRACTION_INSTRUCTIONS,
     input: userMessageBody,
   });
@@ -358,7 +358,7 @@ async function extractAndSaveInsight(
   userMessageBody: string
 ): Promise<void> {
   const extractResponse = await openai.responses.create({
-    model: "gpt-4.1-mini",
+    model: "gpt-5.5",
     instructions: INSIGHT_EXTRACTION_INSTRUCTIONS,
     input: userMessageBody,
   });
