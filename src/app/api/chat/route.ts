@@ -267,7 +267,7 @@ export async function POST(request: NextRequest) {
       model: "gpt-5.5",
       instructions: buildInstructions(partnerSummary, partnerInsights, consultationTitle),
       input,
-    });
+    }, { signal: request.signal });
     aiText = aiResponse.output_text;
     if (!aiText) throw new Error("empty response from OpenAI");
   } catch (err) {
