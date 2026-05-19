@@ -43,6 +43,9 @@ export default function ChatPanel({
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
+      // IME変換中（日本語確定前）は送信しない
+      if (e.nativeEvent.isComposing) return;
+
       // タッチデバイス（スマホ）では Enter で改行、送信はボタンのみ
       const isTouchDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
       if (!isTouchDevice) {
