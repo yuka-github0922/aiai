@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import LogoutButton from "@/app/dashboard/logout-button";
 import AiSummaryForm from "./ai-summary-form";
 import AnniversarySection from "./anniversary-section";
 
@@ -54,7 +56,15 @@ export default async function SettingsPage() {
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">設定</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-bold text-gray-800">設定</h1>
+          <Link
+            href="/dashboard"
+            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            ← ホーム
+          </Link>
+        </div>
         <p className="text-sm text-gray-500 mb-8">
           あなたのプロフィールとコミュニケーション傾向をAIに伝えることで、
           パートナーへのアドバイスがより的確になります。
@@ -85,6 +95,10 @@ export default async function SettingsPage() {
             initialAnniversaries={(anniversaries ?? []) as { id: string; title: string; date: string }[]}
           />
         </section>
+
+        <div className="mt-8 flex justify-center">
+          <LogoutButton />
+        </div>
       </div>
     </main>
   );

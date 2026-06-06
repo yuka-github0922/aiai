@@ -1,11 +1,17 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import LogoutButton from "./logout-button";
-import InviteCodeCopy from "./invite-code-copy";
-import PartnerNicknameEditor from "./partner-nickname-editor";
+import { buildAiMemories, countAiMemories, type MemoForMemory } from "@/lib/ai-memories";
+import { interpretMemosForDisplay } from "@/lib/interpret-memos-for-display";
+import { buildCoupleStats } from "@/lib/couple-stats";
 import { generateNudgeWithAI, type InsightRow, type AnniversaryRow, type MemoRow } from "@/lib/nudge";
 import { decryptHintBody } from "@/lib/encryption";
+import ConsultCta from "./consult-cta";
+import DashboardHero from "./dashboard-hero";
+import NudgeCard from "./nudge-card";
+import AiMemoriesSection from "./ai-memories-section";
+import DashboardDecorations from "./dashboard-decorations";
+import SettingsPanel from "./settings-panel";
 
 type CoupleRow = {
   id: string;
@@ -18,11 +24,6 @@ type MemberRow = {
   joined_at: string;
 };
 
-type ProfileRow = {
-  display_name: string | null;
-  avatar_url: string | null;
-};
-
 type AiSummaryRow = {
   gender: string | null;
   birth_year: number | null;
@@ -30,6 +31,15 @@ type AiSummaryRow = {
   basic_values: string | null;
   communication_style: string | null;
 };
+
+function resolveSelfName(
+  displayName: string | null | undefined,
+  email: string | undefined
+): string {
+  if (displayName?.trim()) return displayName.trim();
+  const local = email?.split("@")[0];
+  return local?.trim() || "あなた";
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -58,31 +68,25 @@ export default async function DashboardPage() {
     (m) => m.user_id !== user.id
   ) ?? null;
 
-  let partnerProfile: ProfileRow | null = null;
-  if (partner) {
-    const { data: profile } = await supabase
+  const [
+    { data: aiSummary },
+    { data: myProfile },
+    { data: rawInsights },
+    { data: rawAnniversaries },
+    { data: rawMemos },
+    { count: memoCount },
+  ] = await Promise.all([
+    supabase
+      .from("ai_summaries")
+      .select("gender, birth_year, mbti, basic_values, communication_style")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
       .from("profiles")
-      .select("display_name, avatar_url")
-      .eq("id", partner.user_id)
-      .maybeSingle();
-    partnerProfile = profile;
-  }
-
-  const { data: aiSummary } = await supabase
-    .from("ai_summaries")
-    .select("gender, birth_year, mbti, basic_values, communication_style")
-    .eq("user_id", user.id)
-    .maybeSingle() as { data: AiSummaryRow | null };
-
-  const { data: myProfile } = await supabase
-    .from("profiles")
-    .select("partner_nickname")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  // ナッジ用データ取得
-  const [{ data: rawInsights }, { data: rawAnniversaries }, { data: rawMemos }] = await Promise.all([
-    supabase.rpc("get_partner_insights_for_nudge", { limit_param: 5 }),
+      .select("partner_nickname, display_name")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase.rpc("get_partner_insights_for_nudge", { limit_param: 100 }),
     supabase
       .from("anniversaries")
       .select("title, date")
@@ -93,6 +97,10 @@ export default async function DashboardPage() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(10),
+    supabase
+      .from("partner_memos")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id),
   ]);
 
   type RawInsightRow = {
@@ -106,168 +114,98 @@ export default async function DashboardPage() {
     created_at:   r.created_at,
   }));
 
-  const nudgeMessage = await generateNudgeWithAI(
-    decryptedInsights,
-    (rawAnniversaries ?? []) as AnniversaryRow[],
-    (rawMemos ?? []) as MemoRow[]
+  const anniversaries = (rawAnniversaries ?? []) as AnniversaryRow[];
+  const memos = (rawMemos ?? []) as MemoForMemory[];
+
+  const [nudgeMessage, interpretedMemoLabels] = await Promise.all([
+    generateNudgeWithAI(decryptedInsights, anniversaries, memos),
+    interpretMemosForDisplay(memos),
+  ]);
+
+  const validInsights = decryptedInsights.filter(
+    (i) => i.partner_hint.trim().length > 0
   );
 
-  const partnerNickname = (myProfile as { partner_nickname: string | null } | null)?.partner_nickname;
+  const aiMemories = buildAiMemories({
+    memos: memos.map((memo) => ({
+      ...memo,
+      displayLabel: interpretedMemoLabels.get(memo.id ?? memo.created_at),
+    })),
+    insights: validInsights,
+  });
+
+  const totalMemoryCount = countAiMemories(memoCount ?? 0, validInsights.length);
+
+  const coupleStats = buildCoupleStats(anniversaries);
+
+  const profile = myProfile as {
+    partner_nickname: string | null;
+    display_name: string | null;
+  } | null;
+
+  const partnerNickname = profile?.partner_nickname;
+  const selfName = resolveSelfName(profile?.display_name, user.email);
+  const partnerName = partnerNickname?.trim() || "パートナー";
 
   const genderLabel =
     aiSummary?.gender === "male" ? "男性" : aiSummary?.gender === "female" ? "女性" : null;
-  const hasSummary = !!(
-    aiSummary?.mbti || aiSummary?.communication_style || aiSummary?.basic_values
-  );
+
+  const summaryTags = [
+    aiSummary?.mbti,
+    genderLabel,
+    aiSummary?.birth_year ? `${aiSummary.birth_year}年生` : null,
+  ].filter((tag): tag is string => !!tag);
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
-      <header className="bg-white border-b border-gray-100">
-        <div className="max-w-lg mx-auto px-5 py-4 flex items-center justify-between">
+    <main className="min-h-screen aiai-dashboard-bg relative">
+      <DashboardDecorations />
+
+      <header className="sticky top-0 z-20 bg-white/75 backdrop-blur-md border-b-2 border-white shadow-[0_2px_0_rgba(148,163,184,0.12)]">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <span className="text-rose-400">♥</span>
-            <span className="font-bold text-gray-800 text-lg tracking-tight">AiAi</span>
+            <span className="text-rose-400 text-sm">♥</span>
+            <span className="text-lg font-black italic text-rose-500 tracking-tight">
+              AiAi
+            </span>
+            <span className="text-[9px] font-bold bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded tracking-wider">
+              ふたり専用
+            </span>
           </div>
-          <LogoutButton />
+          <Link
+            href="/settings"
+            className="text-[11px] font-bold text-gray-500 bg-white px-3 py-1.5 rounded-lg border-2 border-gray-100 shadow-[2px_2px_0_rgba(148,163,184,0.15)] hover:text-gray-700 transition-colors"
+          >
+            設定
+          </Link>
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-5 py-6 flex flex-col gap-3">
+      <div className="relative z-10 max-w-lg mx-auto px-4 py-3 flex flex-col gap-3.5">
+        <DashboardHero
+          selfName={selfName}
+          partnerName={partnerName}
+          hasPartner={!!partner}
+          stats={coupleStats}
+          inviteCode={couple?.invite_code ?? null}
+        />
 
-        {/* ─── あなた ─── */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          {/* ユーザー情報 */}
-          <div className="px-6 pt-5 pb-4">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">
-              あなた
-            </p>
-            <p className="text-sm text-gray-700 font-medium">{user.email}</p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              参加日: {new Date(membership.joined_at as string).toLocaleDateString("ja-JP")}
-            </p>
-          </div>
+        <NudgeCard message={nudgeMessage} />
 
-          {/* 招待コード */}
-          {couple && (
-            <>
-              <div className="h-px bg-gray-50 mx-6" />
-              <div className="px-6 py-4">
-                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2.5">
-                  招待コード
-                </p>
-                <InviteCodeCopy code={couple.invite_code} />
-                {!partner && (
-                  <p className="text-xs text-gray-400 mt-2">
-                    パートナーにこのコードを共有してください
-                  </p>
-                )}
-              </div>
-            </>
-          )}
+        <AiMemoriesSection memories={aiMemories} totalCount={totalMemoryCount} />
 
-          {/* あなたの情報 */}
-          <div className="h-px bg-gray-50 mx-6" />
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">
-                あなたの情報
-              </p>
-              <Link
-                href="/settings"
-                className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                編集 →
-              </Link>
-            </div>
-            <p className="text-[11px] text-gray-400 mb-2.5">
-              入力するほど、AIのアドバイス精度が上がります
-            </p>
-            {hasSummary ? (
-              <div className="space-y-2">
-                <div className="flex flex-wrap gap-1.5">
-                  {aiSummary?.mbti && (
-                    <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                      {aiSummary.mbti}
-                    </span>
-                  )}
-                  {genderLabel && (
-                    <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                      {genderLabel}
-                    </span>
-                  )}
-                  {aiSummary?.birth_year && (
-                    <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                      {aiSummary.birth_year}年生
-                    </span>
-                  )}
-                </div>
-                {aiSummary?.communication_style && (
-                  <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
-                    {aiSummary.communication_style}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-400">
-                まだ入力されていません。
-              </p>
-            )}
-          </div>
-        </section>
+        <ConsultCta />
 
-        {/* ─── パートナー ─── */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5">
-          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">
-            パートナー
-          </p>
-          {partner ? (
-            <PartnerNicknameEditor
-              initialNickname={partnerNickname ?? null}
-              joinedAt={partner.joined_at}
-            />
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-300 text-lg shrink-0">
-                ?
-              </div>
-              <p className="text-sm text-gray-400">まだパートナーが参加していません</p>
-            </div>
-          )}
-        </section>
-
-        {/* ─── AiAiからのひとこと ─── */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-rose-400 text-base">♥</span>
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">
-              AiAiからのひとこと
-            </p>
-          </div>
-          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-            {nudgeMessage}
-          </p>
-          <p className="text-[11px] text-gray-400 mt-3">
-            パートナーの最近の傾向や記念日をもとに提案しています
-          </p>
-        </section>
-
-        {/* ─── 相談チャット ─── */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5">
-          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
-            相談チャット
-          </p>
-          <p className="text-xs text-gray-400 mb-4">
-            AIがふたりのすれ違いをやさしくほどきます
-          </p>
-          <Link
-            href="/consultations"
-            className="block w-full text-center bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
-          >
-            相談一覧を見る
-          </Link>
-        </section>
-
+        <SettingsPanel
+          email={user.email ?? ""}
+          joinedAt={membership.joined_at as string}
+          inviteCode={couple?.invite_code ?? null}
+          hasPartner={!!partner}
+          partnerNickname={partnerNickname ?? null}
+          partnerJoinedAt={partner?.joined_at ?? null}
+          summaryTags={summaryTags}
+          communicationStyle={aiSummary?.communication_style ?? null}
+          defaultOpen={!partner}
+        />
       </div>
     </main>
   );
