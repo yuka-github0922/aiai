@@ -89,9 +89,10 @@ function extractWebPushError(err: unknown): PushSendFailure {
   };
 }
 
-export async function sendPushToUser(
+export async function deliverPushToUserSubscriptions(
   supabase: SupabaseClient,
   userId: string,
+  subscriptions: PushSubscriptionRow[],
   payload: PushPayload
 ): Promise<PushSendResult> {
   if (!ensureVapidConfigured()) {
@@ -99,26 +100,10 @@ export async function sendPushToUser(
       sent: 0,
       failed: 0,
       removed: 0,
-      subscriptionCount: 0,
+      subscriptionCount: subscriptions.length,
       failures: [],
       error:
         "VAPID 鍵が未設定です。.env.local に NEXT_PUBLIC_VAPID_PUBLIC_KEY と VAPID_PRIVATE_KEY を設定してください",
-    };
-  }
-
-  const { subscriptions, listError } = await listPushSubscriptionsForUser(
-    supabase,
-    userId
-  );
-
-  if (listError) {
-    return {
-      sent: 0,
-      failed: 0,
-      removed: 0,
-      subscriptionCount: 0,
-      failures: [],
-      error: listError,
     };
   }
 
@@ -189,4 +174,33 @@ export async function sendPushToUser(
     failures,
     error: null,
   };
+}
+
+export async function sendPushToUser(
+  supabase: SupabaseClient,
+  userId: string,
+  payload: PushPayload
+): Promise<PushSendResult> {
+  const { subscriptions, listError } = await listPushSubscriptionsForUser(
+    supabase,
+    userId
+  );
+
+  if (listError) {
+    return {
+      sent: 0,
+      failed: 0,
+      removed: 0,
+      subscriptionCount: 0,
+      failures: [],
+      error: listError,
+    };
+  }
+
+  return deliverPushToUserSubscriptions(
+    supabase,
+    userId,
+    subscriptions,
+    payload
+  );
 }
