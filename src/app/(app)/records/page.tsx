@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireCoupleAppContext } from "@/lib/couple-app-data";
 import { buildCoupleStats } from "@/lib/couple-stats";
+import { getDailyQuestionRevealCount } from "@/lib/daily-question-stats";
 import { getTimelinePage } from "@/lib/timeline-page";
 import AppHeader from "@/components/app/app-header";
 import RecordsStatsSection from "@/app/dashboard/records-stats-section";
@@ -15,7 +16,10 @@ export default async function RecordsPage() {
 
   if (!timelinePage) redirect("/login");
 
-  const coupleStats = buildCoupleStats(ctx.anniversaries);
+  const [coupleStats, dailyQuestionCount] = await Promise.all([
+    Promise.resolve(buildCoupleStats(ctx.anniversaries)),
+    getDailyQuestionRevealCount(ctx.membership.couple_id),
+  ]);
 
   return (
     <main className="min-h-screen aiai-dashboard-bg relative">
@@ -26,6 +30,7 @@ export default async function RecordsPage() {
         <RecordsStatsSection
           memoCount={ctx.memoCount}
           consultationCount={ctx.consultationCount}
+          dailyQuestionCount={dailyQuestionCount}
           anniversaryCount={ctx.anniversaries.length}
           stats={coupleStats}
         />

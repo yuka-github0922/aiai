@@ -6,7 +6,8 @@ import { getRelationshipStart } from "@/lib/couple-stats";
 export type RecentRecordSource =
   | "consultation"
   | "memo"
-  | "anniversary";
+  | "anniversary"
+  | "daily_question";
 
 export type RecentRecord = {
   id: string;
@@ -24,6 +25,13 @@ export type ConsultationForRecord = {
   updated_at: string;
 };
 
+export type TimelineEventForRecord = {
+  id: string;
+  occurred_at: string;
+  source_ref: string;
+  question: string;
+};
+
 export type BuildRecentRecordsInput = {
   /** 自分の相談のみ（user_id で絞り込み済みであること） */
   consultations: ConsultationForRecord[];
@@ -31,6 +39,8 @@ export type BuildRecentRecordsInput = {
   memos: MemoForMemory[];
   /** カップル共有の記念日 */
   anniversaries: AnniversaryRow[];
+  /** カップル共有のタイムラインイベント（ふたり質問など） */
+  timelineEvents?: TimelineEventForRecord[];
   limit?: number;
 };
 
@@ -45,6 +55,7 @@ export function buildRecentRecords(input: BuildRecentRecordsInput): RecentRecord
     ...recordsFromConsultations(input.consultations),
     ...recordsFromMemos(input.memos),
     ...recordsFromAnniversaries(input.anniversaries, today),
+    ...recordsFromTimelineEvents(input.timelineEvents ?? []),
   ];
 
   const sorted = events.sort(
@@ -53,6 +64,43 @@ export function buildRecentRecords(input: BuildRecentRecordsInput): RecentRecord
 
   if (input.limit === undefined) return sorted;
   return sorted.slice(0, input.limit);
+}
+
+function recordsFromTimelineEvents(
+  events: TimelineEventForRecord[]
+): RecentRecord[] {
+  return events.map((event) => ({
+    id: `daily-question-${event.id}`,
+    date: event.occurred_at,
+    dateLabel: formatRecordDate(event.occurred_at),
+    icon: "💖",
+    title: formatDailyQuestionAnsweredTitle(event.occurred_at, event.question),
+    source: "daily_question",
+    sourceRef: event.source_ref,
+  }));
+}
+
+/** ふたりの回答完了日（revealed_at / JST） */
+export function formatDailyQuestionAnsweredAt(iso: string): string {
+  const parts = new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(new Date(iso));
+
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+
+  return `${get("month")}月${get("day")}日`;
+}
+
+export function formatDailyQuestionAnsweredTitle(
+  occurredAt: string,
+  question: string
+): string {
+  const when = formatDailyQuestionAnsweredAt(occurredAt);
+  const q = question.trim() || "ふたり質問";
+  return `${when}に「${q}」に答えました`;
 }
 
 function recordsFromConsultations(

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchDailyQuestionTimelineEvents } from "@/lib/daily-question-timeline";
 import { heuristicMemoUnderstanding } from "@/lib/memo-understanding";
 import { buildRecentRecords, type RecentRecord } from "@/lib/recent-records";
 import { TIMELINE_PAGE_SIZE } from "@/lib/timeline-constants";
@@ -34,6 +35,7 @@ export async function getTimelinePage(
     { data: rawConsultations },
     { data: rawMemos },
     { data: rawAnniversaries },
+    dailyQuestionTimelineEvents,
   ] = await Promise.all([
     supabase
       .from("consultations")
@@ -49,6 +51,7 @@ export async function getTimelinePage(
       .from("anniversaries")
       .select("title, date")
       .eq("couple_id", membership.couple_id),
+    fetchDailyQuestionTimelineEvents(supabase, membership.couple_id),
   ]);
 
   const memos = ((rawMemos ?? []) as MemoForMemory[]).map((memo) => ({
@@ -60,6 +63,7 @@ export async function getTimelinePage(
     consultations: rawConsultations ?? [],
     memos,
     anniversaries: (rawAnniversaries ?? []) as AnniversaryRow[],
+    timelineEvents: dailyQuestionTimelineEvents,
   });
 
   const total = allRecords.length;

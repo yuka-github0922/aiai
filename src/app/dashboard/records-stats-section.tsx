@@ -4,6 +4,7 @@ type Props = {
   /** 自分の相談から抽出されたメモ件数 */
   memoCount: number;
   consultationCount: number;
+  dailyQuestionCount: number;
   anniversaryCount: number;
   stats: CoupleStats;
 };
@@ -17,12 +18,14 @@ type StatItem = {
 export default function RecordsStatsSection({
   memoCount,
   consultationCount,
+  dailyQuestionCount,
   anniversaryCount,
   stats,
 }: Props) {
   const items: StatItem[] = [
     { label: "覚えていること", value: String(memoCount), unit: "件" },
     { label: "相談した回数", value: String(consultationCount), unit: "回" },
+    { label: "今日の質問", value: String(dailyQuestionCount), unit: "件" },
     { label: "記念日", value: String(anniversaryCount), unit: "件" },
   ];
 
@@ -41,7 +44,7 @@ export default function RecordsStatsSection({
           <span className="text-sky-400">📊</span> ふたりのデータ
         </p>
         <p className="text-[10px] text-sky-400/60 mt-1 tracking-wide">
-          相談を重ねるほど、数字が育っていくよ
+          相談やふたり質問を重ねるほど、数字が育っていくよ
         </p>
       </div>
 
