@@ -294,7 +294,7 @@ export default function AiSummaryForm({ initialSummary, initialPartnerNickname }
       </button>
 
       <div>
-        <Link href="/dashboard" className="text-sm text-gray-400 hover:text-gray-600">
+        <Link href="/couple" className="text-sm text-gray-400 hover:text-gray-600">
           ← ダッシュボードに戻る
         </Link>
       </div>

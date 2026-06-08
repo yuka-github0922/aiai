@@ -31,6 +31,10 @@ function findRelationshipStart(anniversaries: AnniversaryRow[]): Date | null {
   return match ? new Date(match.date) : null;
 }
 
+export function getRelationshipStart(anniversaries: AnniversaryRow[]): Date | null {
+  return findRelationshipStart(anniversaries);
+}
+
 export function buildCoupleStats(anniversaries: AnniversaryRow[]): CoupleStats {
   const today = new Date();
   const relationshipStart = findRelationshipStart(anniversaries);

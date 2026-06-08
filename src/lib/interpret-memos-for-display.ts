@@ -1,9 +1,6 @@
 import OpenAI from "openai";
 import type { MemoRow } from "@/lib/nudge";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { heuristicMemoUnderstanding } from "@/lib/memo-understanding";
 
 const INTERPRET_INSTRUCTIONS =
   "以下のメモは、ユーザー発言から抽出した具体情報です。\n" +
@@ -25,6 +22,12 @@ function memoKey(memo: MemoInput): string {
   return memo.id ?? memo.created_at;
 }
 
+function getOpenAIClient(): OpenAI | null {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+  return new OpenAI({ apiKey });
+}
+
 /** 具体メモを「AiAiが理解したこと」に言い換える（表示用） */
 export async function interpretMemosForDisplay(
   memos: MemoInput[]
@@ -35,7 +38,8 @@ export async function interpretMemosForDisplay(
 
   if (pool.length === 0) return new Map();
 
-  if (!process.env.OPENAI_API_KEY) {
+  const openai = getOpenAIClient();
+  if (!openai) {
     return heuristicInterpretMap(pool);
   }
 
@@ -82,7 +86,6 @@ function parseInterpretResponse(
     return map;
   }
 
-  // パース漏れがあればヒューリスティックで補完
   for (const memo of pool) {
     const key = memoKey(memo);
     if (!map.has(key)) {
@@ -101,33 +104,4 @@ function heuristicInterpretMap(pool: MemoInput[]): Map<string, string> {
     if (understanding) map.set(memoKey(memo), understanding);
   }
   return map;
-}
-
-/** OpenAI 不可時のフォールバック */
-export function heuristicMemoUnderstanding(content: string): string | null {
-  const text = content.trim();
-  if (!text || text === "なし") return null;
-
-  const hasPet = /小春|犬|猫|ペット|わんわん/.test(text);
-
-  if (hasPet && /物件|住める|同棲|マンション|部屋|引っ越/.test(text)) {
-    return "小春は家族として大切にしている";
-  }
-  if (hasPet && /遊園地|行きたい|デート|遊び|公園/.test(text)) {
-    return "小春との時間を大切にしたい";
-  }
-  if (/同棲|住める|物件|引っ越|暮らし/.test(text)) {
-    return "同棲について話し合っている";
-  }
-  if (/行きたい|遊園地|旅行|デート/.test(text)) {
-    return "一緒の時間を大切にしたい";
-  }
-  if (/欲しい|プレゼント|財布|ギフト/.test(text)) {
-    return "相手の気持ちを大切にしたい";
-  }
-  if (/好き|大切|家族/.test(text)) {
-    return text.length <= 30 ? text : `${text.slice(0, 29)}…`;
-  }
-
-  return text.length <= 30 ? text : `${text.slice(0, 29)}…`;
 }

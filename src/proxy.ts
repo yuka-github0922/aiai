@@ -35,6 +35,9 @@ export async function proxy(request: NextRequest) {
   if (
     !user &&
     (pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/home") ||
+      pathname.startsWith("/records") ||
+      pathname.startsWith("/couple") ||
       pathname.startsWith("/onboarding") ||
       pathname.startsWith("/consultations") ||
       pathname.startsWith("/settings"))
@@ -44,10 +47,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // ログイン済みで /login or /signup → /dashboard へ
+  // ログイン済みで /login or /signup → /home へ
   if (user && (pathname === "/login" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/home";
     return NextResponse.redirect(url);
   }
 
@@ -83,7 +86,7 @@ export async function proxy(request: NextRequest) {
       // カップルあり・パートナー参加済み → /onboarding はブロック
       if (hasPartner && pathname.startsWith("/onboarding")) {
         const url = request.nextUrl.clone();
-        url.pathname = "/dashboard";
+        url.pathname = "/home";
         return NextResponse.redirect(url);
       }
     }
@@ -94,6 +97,12 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/home",
+    "/home/:path*",
+    "/records",
+    "/records/:path*",
+    "/couple",
+    "/couple/:path*",
     "/dashboard/:path*",
     "/onboarding/:path*",
     "/onboarding",

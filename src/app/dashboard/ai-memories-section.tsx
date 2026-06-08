@@ -2,7 +2,6 @@ import type { AiMemoryItem } from "@/lib/ai-memories";
 
 type Props = {
   memories: AiMemoryItem[];
-  totalCount: number;
 };
 
 const PASTEL_STYLES = [
@@ -22,10 +21,8 @@ export function AiMemoryCard({
 
   return (
     <li>
-      <button
-        type="button"
-        className={`w-full text-left flex items-center gap-3 bg-gradient-to-r ${style} rounded-xl px-4 py-3.5 border-2 hover:scale-[1.01] transition-transform active:scale-[0.99]`}
-        aria-label={memory.label}
+      <div
+        className={`w-full flex items-center gap-3 bg-gradient-to-r ${style} rounded-xl px-4 py-3.5 border-2`}
       >
         <span
           className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/90 text-lg shrink-0 border border-white shadow-sm"
@@ -36,48 +33,29 @@ export function AiMemoryCard({
         <span className="text-[13px] text-gray-700 leading-snug flex-1 font-medium">
           {memory.label}
         </span>
-        <span className="text-gray-300 text-sm shrink-0" aria-hidden="true">
-          ›
-        </span>
-      </button>
+      </div>
     </li>
   );
 }
 
-export default function AiMemoriesSection({ memories, totalCount }: Props) {
-  const showMoreLink = totalCount > memories.length;
-
+export default function AiMemoriesSection({ memories }: Props) {
   return (
     <section className="aiai-sticker-card px-4 py-5">
-      <div className="flex items-start justify-between gap-2 mb-4">
-        <div>
-          <p className="text-sm font-black text-gray-800 tracking-tight">
-            <span className="text-rose-400">♡</span> AiAiが覚えていること
-          </p>
-          <p className="text-[10px] text-rose-400/60 mt-1 tracking-wide">
-            ふたりだけの思い出を、そっと保管しています
-          </p>
-        </div>
-        <span className="shrink-0 aiai-sticker-label !bg-rose-200 !text-rose-800 !rotate-0 tabular-nums">
-          {totalCount}
-        </span>
+      <div className="mb-4">
+        <p className="text-sm font-black text-gray-800 tracking-tight">
+          <span className="text-rose-400">♡</span> AiAiが覚えていること
+        </p>
+        <p className="text-[10px] text-rose-400/60 mt-1 tracking-wide">
+          このAI、私たちのこと覚えてる…
+        </p>
       </div>
 
       {memories.length > 0 ? (
-        <>
-          <ul className="space-y-2.5">
-            {memories.map((memory, i) => (
-              <AiMemoryCard key={memory.id} memory={memory} index={i} />
-            ))}
-          </ul>
-          {showMoreLink && (
-            <p className="text-right mt-3">
-              <span className="text-xs font-bold text-rose-400 tracking-wide">
-                ふたりの記憶をもっと見る ›
-              </span>
-            </p>
-          )}
-        </>
+        <ul className="space-y-2.5">
+          {memories.map((memory, i) => (
+            <AiMemoryCard key={memory.id} memory={memory} index={i} />
+          ))}
+        </ul>
       ) : (
         <div className="text-center py-6 px-3 rounded-xl border-2 border-dashed border-rose-200/50 bg-rose-50/25">
           <p className="text-sm text-gray-500 leading-relaxed">

@@ -4,7 +4,7 @@ export default function ConsultCta() {
   return (
     <section className="pt-0.5 pb-1">
       <Link
-        href="/consultations"
+        href="/consultations/new"
         className="aiai-cta-seventeen block w-full text-center px-5 py-5 rounded-2xl transition-all active:scale-[0.98]"
       >
         <span className="block text-lg font-black text-white tracking-tight drop-shadow-sm">

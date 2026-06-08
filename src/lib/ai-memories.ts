@@ -1,4 +1,4 @@
-import { heuristicMemoUnderstanding } from "@/lib/interpret-memos-for-display";
+import { heuristicMemoUnderstanding } from "@/lib/memo-understanding";
 import type { InsightRow, MemoRow } from "@/lib/nudge";
 
 export type AiMemorySource = "memo" | "insight";
@@ -23,25 +23,57 @@ export type BuildAiMemoriesInput = {
   insights: Pick<InsightRow, "partner_hint" | "created_at">[];
 };
 
+export type BuildAiMemoriesOptions = {
+  maxMemos?: number;
+  maxInsights?: number;
+  maxTotal?: number;
+};
+
 const MAX_LABEL_LENGTH = 30;
-const MAX_MEMOS = 2;
-const MAX_INSIGHTS = 1;
-const MAX_TOTAL = 3;
+const HOME_MAX_MEMOS = 2;
+const HOME_MAX_INSIGHTS = 1;
+const HOME_MAX_TOTAL = 3;
 
 /** partner_memos と partner insights の合計件数 */
 export function countAiMemories(memoCount: number, insightCount: number): number {
   return memoCount + insightCount;
 }
 
-export function buildAiMemories(input: BuildAiMemoriesInput): AiMemoryItem[] {
-  const fromMemos = memoriesFromMemos(input.memos);
-  const insightSlots = Math.min(MAX_INSIGHTS, MAX_TOTAL - fromMemos.length);
+export function buildAiMemories(
+  input: BuildAiMemoriesInput,
+  options?: BuildAiMemoriesOptions
+): AiMemoryItem[] {
+  const maxMemos = options?.maxMemos ?? HOME_MAX_MEMOS;
+  const maxInsights = options?.maxInsights ?? HOME_MAX_INSIGHTS;
+  const maxTotal = options?.maxTotal ?? HOME_MAX_TOTAL;
+
+  const fromMemos = memoriesFromMemos(input.memos, maxMemos);
+  const insightSlots = Math.min(maxInsights, maxTotal - fromMemos.length);
   const fromInsights = memoriesFromInsights(input.insights, insightSlots);
 
-  return [...fromMemos, ...fromInsights].slice(0, MAX_TOTAL);
+  return [...fromMemos, ...fromInsights].slice(0, maxTotal);
 }
 
-function memoriesFromMemos(memos: MemoForMemory[]): AiMemoryItem[] {
+/** 作成日時の新しい順に最大 limit 件（ホーム用） */
+export function buildAiMemoriesLatest(
+  input: BuildAiMemoriesInput,
+  limit = 5
+): AiMemoryItem[] {
+  const fromMemos = memoriesFromMemos(input.memos, input.memos.length);
+  const fromInsights = memoriesFromInsights(
+    input.insights,
+    input.insights.length
+  );
+
+  return [...fromMemos, ...fromInsights]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+    .slice(0, limit);
+}
+
+function memoriesFromMemos(memos: MemoForMemory[], limit: number): AiMemoryItem[] {
   const result: AiMemoryItem[] = [];
 
   for (const memo of memos) {
@@ -61,7 +93,7 @@ function memoriesFromMemos(memos: MemoForMemory[]): AiMemoryItem[] {
       createdAt: memo.created_at,
     });
 
-    if (result.length >= MAX_MEMOS) break;
+    if (result.length >= limit) break;
   }
 
   return result;
