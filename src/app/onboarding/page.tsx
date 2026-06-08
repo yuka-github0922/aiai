@@ -82,7 +82,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push("/home");
     router.refresh();
   }
 
@@ -152,7 +152,7 @@ export default function OnboardingPage() {
                 </div>
                 <button
                   onClick={() => {
-                    router.push("/dashboard");
+                    router.push("/home");
                     router.refresh();
                   }}
                   className="mt-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-4 py-2 text-sm transition-colors"

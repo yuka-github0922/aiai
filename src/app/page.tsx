@@ -9,7 +9,7 @@ export default async function TopPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) redirect("/dashboard");
+  if (user) redirect("/home");
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
