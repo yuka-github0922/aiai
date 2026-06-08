@@ -12,7 +12,10 @@ import {
   type DailyQuestionState,
   type DailyQuestionVisible,
 } from "@/lib/daily-question-types";
-import { formatDailyQuestionUnlockAt } from "@/lib/daily-question-unlock";
+import {
+  formatDailyQuestionUnlockAt,
+  isDailyQuestionUnlockAtPassed,
+} from "@/lib/daily-question-unlock";
 import DailyQuestionRevealSection from "./daily-question-reveal-section";
 import DailyQuestionUnderstandingScore from "./daily-question-understanding-score";
 
@@ -188,25 +191,22 @@ export default function DailyQuestionCard({ initialState }: Props) {
 
       {state.phase === "waiting_next_question" && (
         <WaitingMessage>
-          {state.partnerPendingAdvance ? (
-            <>
-              ⏳ 相手の確認待ち
-              <br />
-              <span className="text-xs text-gray-500">
-                ふたりが「次の質問へ」を押すと、次の質問の準備が整います
-              </span>
-            </>
-          ) : (
-            <>
-              🌙 次の質問は今夜 20:00 以降
-              <br />
-              <span className="text-xs text-gray-500">
-                {state.unlockAt
-                  ? `${formatDailyQuestionUnlockAt(state.unlockAt)} ごろに届きます`
-                  : "20:00 以降に新しい質問が届きます"}
-              </span>
-            </>
-          )}
+          🌙 次の質問は今夜 20:00 以降
+          <br />
+          <span className="text-xs text-gray-500">
+            {state.unlockAt ? (
+              state.partnerPendingAdvance &&
+              isDailyQuestionUnlockAtPassed(state.unlockAt) ? (
+                <>
+                  20:00 になりました。届くまでに、相手の「次の質問へ」も必要です
+                </>
+              ) : (
+                <>{formatDailyQuestionUnlockAt(state.unlockAt)} ごろに届きます</>
+              )
+            ) : (
+              "20:00 以降に新しい質問が届きます"
+            )}
+          </span>
         </WaitingMessage>
       )}
 

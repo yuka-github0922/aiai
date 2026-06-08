@@ -9,3 +9,7 @@ export function formatDailyQuestionUnlockAt(iso: string): string {
     hour12: false,
   });
 }
+
+export function isDailyQuestionUnlockAtPassed(iso: string): boolean {
+  return new Date(iso).getTime() <= Date.now();
+}
