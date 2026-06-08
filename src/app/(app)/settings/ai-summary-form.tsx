@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { AiSummaryRow } from "./page";
 
@@ -19,10 +20,17 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 type Props = {
   initialSummary: AiSummaryRow | null;
+  initialDisplayName: string;
   initialPartnerNickname: string;
 };
 
-export default function AiSummaryForm({ initialSummary, initialPartnerNickname }: Props) {
+export default function AiSummaryForm({
+  initialSummary,
+  initialDisplayName,
+  initialPartnerNickname,
+}: Props) {
+  const router = useRouter();
+  const [displayName, setDisplayName] = useState(initialDisplayName);
   const [partnerNickname, setPartnerNickname] = useState(initialPartnerNickname);
 
   // --- 基本プロフィール ---
@@ -67,11 +75,29 @@ export default function AiSummaryForm({ initialSummary, initialPartnerNickname }
 
     const supabase = createClient();
 
-    // パートナーの呼び名を profiles に保存
-    await supabase
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setError("ログインが必要です。");
+      setSaving(false);
+      return;
+    }
+
+    const { error: profileError } = await supabase
       .from("profiles")
-      .update({ partner_nickname: partnerNickname.trim() || null })
-      .eq("id", (await supabase.auth.getUser()).data.user!.id);
+      .update({
+        display_name: displayName.trim() || null,
+        partner_nickname: partnerNickname.trim() || null,
+      })
+      .eq("id", user.id);
+
+    if (profileError) {
+      console.error("profiles update error:", profileError);
+      setError("名前の保存に失敗しました。");
+      setSaving(false);
+      return;
+    }
 
     const { error: rpcError } = await supabase.rpc("upsert_ai_summary", {
       communication_style_param: communicationStyle.trim() || null,
@@ -98,6 +124,7 @@ export default function AiSummaryForm({ initialSummary, initialPartnerNickname }
     }
 
     setSaved(true);
+    router.refresh();
     setTimeout(() => setSaved(false), 3000);
   }
 
@@ -147,6 +174,26 @@ export default function AiSummaryForm({ initialSummary, initialPartnerNickname }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+
+      {/* --- あなたの名前 --- */}
+      <div>
+        <label htmlFor="display_name" className="block text-sm font-medium text-gray-700 mb-1">
+          あなたの名前
+        </label>
+        <p className="text-xs text-gray-400 mb-2">
+          ホームの「ふたりの恋日記」に表示されます。未入力の場合はメールアドレスの冒頭が使われます。
+        </p>
+        <input
+          id="display_name"
+          type="text"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          placeholder="例：ゆか、たけし"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+        />
+      </div>
+
+      <hr className="border-gray-100" />
 
       {/* --- パートナーの呼び名 --- */}
       <div>
@@ -294,8 +341,8 @@ export default function AiSummaryForm({ initialSummary, initialPartnerNickname }
       </button>
 
       <div>
-        <Link href="/couple" className="text-sm text-gray-400 hover:text-gray-600">
-          ← ダッシュボードに戻る
+        <Link href="/home" className="text-sm text-gray-400 hover:text-gray-600">
+          ← ホームに戻る
         </Link>
       </div>
     </form>

@@ -43,7 +43,7 @@ export default async function SettingsPage() {
         .maybeSingle(),
       supabase
         .from("profiles")
-        .select("partner_nickname")
+        .select("partner_nickname, display_name")
         .eq("id", user.id)
         .maybeSingle(),
       membership
@@ -86,6 +86,10 @@ export default async function SettingsPage() {
 
           <AiSummaryForm
             initialSummary={summary as AiSummaryRow | null}
+            initialDisplayName={
+              (profile as { display_name: string | null } | null)?.display_name ??
+              ""
+            }
             initialPartnerNickname={
               (profile as { partner_nickname: string | null } | null)
                 ?.partner_nickname ?? ""
