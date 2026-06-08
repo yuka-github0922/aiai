@@ -118,7 +118,7 @@ function OffPanelContent({
           通知をONにすると
         </p>
         <ul className="text-sm text-gray-600 mt-2 space-y-1 pl-1">
-          <li>・今日のふたり質問</li>
+          <li>・ふたり質問</li>
           <li>・記念日</li>
           <li>・AiAiからのお知らせ</li>
         </ul>

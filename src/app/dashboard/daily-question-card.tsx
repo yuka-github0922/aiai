@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
+  advanceDailyQuestionForUser,
   submitDailyQuestionAnswer,
   submitDailyQuestionGuess,
 } from "./daily-question-actions";
@@ -12,6 +13,7 @@ import {
   type DailyQuestionVisible,
 } from "@/lib/daily-question-types";
 import DailyQuestionRevealSection from "./daily-question-reveal-section";
+import DailyQuestionUnderstandingScore from "./daily-question-understanding-score";
 
 type Props = {
   initialState: DailyQuestionVisible;
@@ -93,6 +95,8 @@ function TextSubmitForm({
 export default function DailyQuestionCard({ initialState }: Props) {
   const router = useRouter();
   const [state, setState] = useState(initialState);
+  const [advanceError, setAdvanceError] = useState<string | null>(null);
+  const [isAdvancing, startAdvanceTransition] = useTransition();
 
   async function handleSubmit(
     action: (value: string) => Promise<{
@@ -109,20 +113,37 @@ export default function DailyQuestionCard({ initialState }: Props) {
     return { error: result.error };
   }
 
+  function handleAdvance() {
+    setAdvanceError(null);
+    startAdvanceTransition(async () => {
+      const result = await advanceDailyQuestionForUser();
+      if (result.error) {
+        setAdvanceError(result.error);
+        return;
+      }
+      if (result.state?.visible) {
+        setState(result.state);
+        router.refresh();
+      }
+    });
+  }
+
   return (
     <section className="aiai-sticker-card px-4 py-5">
       <div className="mb-4">
         <p className="text-sm font-black text-gray-800 tracking-tight">
-          <span className="text-amber-500">❓</span> 今日のふたり質問
+          <span className="text-amber-500">❓</span> ふたり質問
         </p>
         <p className="text-[10px] text-amber-500/60 mt-1 tracking-wide">
           ふたりの理解度を、少しずつ深めていくよ
         </p>
       </div>
 
-      <p className="text-[15px] font-bold text-gray-800 leading-snug mb-4">
-        {state.question}
-      </p>
+      {state.phase !== "all_completed" && (
+        <p className="text-[15px] font-bold text-gray-800 leading-snug mb-4">
+          {state.question}
+        </p>
+      )}
 
       {state.phase === "needs_my_answer" && (
         <TextSubmitForm
@@ -174,6 +195,13 @@ export default function DailyQuestionCard({ initialState }: Props) {
               </p>
             </div>
 
+            <DailyQuestionUnderstandingScore
+              myGuess={state.myGuess}
+              myAnswer={state.myAnswer}
+              partnerGuess={state.partnerGuess}
+              partnerAnswer={state.partnerAnswer}
+            />
+
             <DailyQuestionRevealSection
               heading="相手の回答"
               answerLabel="回答"
@@ -189,8 +217,40 @@ export default function DailyQuestionCard({ initialState }: Props) {
               guessLabel="相手の予想"
               guess={state.partnerGuess}
             />
+
+            {state.canAdvance && (
+              <div className="pt-1">
+                {advanceError && (
+                  <p className="text-sm text-red-500 bg-red-50 rounded-xl px-3 py-2 border border-red-100 mb-2">
+                    {advanceError}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={handleAdvance}
+                  disabled={isAdvancing}
+                  className="w-full bg-violet-500 hover:bg-violet-600 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition-colors text-sm"
+                >
+                  {isAdvancing ? "進行中..." : "次の質問へ"}
+                </button>
+                <p className="text-[10px] text-gray-400 text-center mt-2 leading-relaxed">
+                  あとから見返すときは、きろくタブから確認できます
+                </p>
+              </div>
+            )}
           </div>
         )}
+
+      {state.phase === "all_completed" && (
+        <div className="text-center py-6 px-3 rounded-xl border-2 border-dashed border-violet-200/60 bg-violet-50/25">
+          <p className="text-sm font-bold text-gray-700 leading-relaxed">
+            すべての質問に答えました
+          </p>
+          <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+            ふたりの回答は、きろくタブからいつでも見返せます
+          </p>
+        </div>
+      )}
     </section>
   );
 }

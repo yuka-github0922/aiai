@@ -21,7 +21,7 @@ export async function POST() {
 
   const result = await sendPushToUser(supabase, user.id, {
     title: "AiAiから今日のひとこと",
-    body: "今日のふたり質問に答えてみませんか？",
+    body: "ふたり質問に答えてみませんか？",
     url: "/home",
   });
 

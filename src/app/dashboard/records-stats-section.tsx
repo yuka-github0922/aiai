@@ -25,7 +25,7 @@ export default function RecordsStatsSection({
   const items: StatItem[] = [
     { label: "覚えていること", value: String(memoCount), unit: "件" },
     { label: "相談した回数", value: String(consultationCount), unit: "回" },
-    { label: "今日の質問", value: String(dailyQuestionCount), unit: "件" },
+    { label: "ふたり質問", value: String(dailyQuestionCount), unit: "件" },
     { label: "記念日", value: String(anniversaryCount), unit: "件" },
   ];
 

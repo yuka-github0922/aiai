@@ -4,7 +4,8 @@ export type DailyQuestionPhase =
   | "needs_my_answer"
   | "needs_my_guess"
   | "waiting_partner"
-  | "revealed";
+  | "revealed"
+  | "all_completed";
 
 export type DailyQuestionHidden = {
   visible: false;
@@ -14,7 +15,8 @@ export type DailyQuestionVisible = {
   visible: true;
   phase: DailyQuestionPhase;
   question: string;
-  roundId: string;
+  roundId: string | null;
+  canAdvance?: boolean;
   myAnswer?: string;
   myGuess?: string;
   partnerAnswer?: string;
@@ -28,7 +30,8 @@ export type DailyQuestionRpcState = {
   visible?: boolean;
   phase?: DailyQuestionPhase;
   question?: string;
-  round_id?: string;
+  round_id?: string | null;
+  can_advance?: boolean;
   my_answer?: string;
   my_guess?: string;
   partner_answer?: string;
@@ -88,11 +91,21 @@ export function parseDailyQuestionRoundDetail(
 export function parseDailyQuestionState(
   raw: DailyQuestionRpcState | null
 ): DailyQuestionState {
-  if (!raw?.visible) {
+  if (!raw?.visible || !raw.phase) {
     return { visible: false };
   }
 
-  if (!raw.phase || !raw.question || !raw.round_id) {
+  if (raw.phase === "all_completed") {
+    return {
+      visible: true,
+      phase: "all_completed",
+      question: raw.question ?? "",
+      roundId: raw.round_id ?? null,
+      canAdvance: false,
+    };
+  }
+
+  if (!raw.question) {
     return { visible: false };
   }
 
@@ -100,7 +113,8 @@ export function parseDailyQuestionState(
     visible: true,
     phase: raw.phase,
     question: raw.question,
-    roundId: raw.round_id,
+    roundId: raw.round_id ?? null,
+    canAdvance: raw.can_advance === true,
   };
 
   if (raw.my_answer) {

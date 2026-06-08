@@ -7,8 +7,8 @@ import { sendPushToUserWithServiceRole } from "@/lib/push/send-cron";
 const NOTIFICATION_TYPE = "daily_question";
 
 const DAILY_QUESTION_PUSH_PAYLOAD = {
-  title: "今日のふたり質問",
-  body: "今日の質問に答えて、相手の気持ちを少しのぞいてみませんか？",
+  title: "ふたり質問",
+  body: "ふたりの質問に答えて、相手の気持ちを少しのぞいてみませんか？",
   url: "/home",
 } as const;
 

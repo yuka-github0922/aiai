@@ -10,7 +10,7 @@ function parseQuestionFromBody(body: string | null | undefined): string | null {
 
 function parseQuestionFromTitle(title: string | null | undefined): string | null {
   if (!title) return null;
-  const prefix = "💖 今日のふたり質問：";
+  const prefix = "💖 ふたり質問：";
   if (title.startsWith(prefix)) {
     return title.slice(prefix.length).trim() || null;
   }

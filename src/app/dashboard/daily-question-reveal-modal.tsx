@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import type { DailyQuestionRoundDetail } from "@/lib/daily-question-types";
 import { formatDailyQuestionAnsweredAt } from "@/lib/recent-records";
 import DailyQuestionRevealSection from "./daily-question-reveal-section";
+import DailyQuestionUnderstandingScore from "./daily-question-understanding-score";
 
 type Props = {
   roundId: string | null;
@@ -131,6 +132,13 @@ export default function DailyQuestionRevealModal({ roundId, onClose }: Props) {
                   💖 お互いの回答
                 </p>
               </div>
+
+              <DailyQuestionUnderstandingScore
+                myGuess={detail.myGuess}
+                myAnswer={detail.myAnswer}
+                partnerGuess={detail.partnerGuess}
+                partnerAnswer={detail.partnerAnswer}
+              />
 
               <DailyQuestionRevealSection
                 heading="相手の回答"
