@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { RecentRecord } from "@/lib/recent-records";
 import { TIMELINE_PAGE_SIZE } from "@/lib/timeline-constants";
+import DailyQuestionRevealModal from "./daily-question-reveal-modal";
 
 type Props = {
   initialRecords: RecentRecord[];
@@ -19,7 +20,13 @@ const NODE_STYLES = [
   "bg-pink-200 border-pink-100",
 ] as const;
 
-function TimelineList({ records }: { records: RecentRecord[] }) {
+function TimelineList({
+  records,
+  onDailyQuestionClick,
+}: {
+  records: RecentRecord[];
+  onDailyQuestionClick: (roundId: string) => void;
+}) {
   return (
     <ol className="relative ml-1 space-y-4">
       <span
@@ -29,9 +36,10 @@ function TimelineList({ records }: { records: RecentRecord[] }) {
 
       {records.map((record, index) => {
         const nodeStyle = NODE_STYLES[index % NODE_STYLES.length];
+        const isDailyQuestion = record.source === "daily_question";
 
-        return (
-          <li key={record.id} className="relative flex gap-3 pl-0.5">
+        const content = (
+          <>
             <div className="relative z-10 shrink-0 pt-0.5">
               <span
                 className={`flex items-center justify-center w-6 h-6 rounded-full border-2 text-[13px] shadow-sm ${nodeStyle}`}
@@ -45,10 +53,37 @@ function TimelineList({ records }: { records: RecentRecord[] }) {
               <p className="text-[11px] font-bold text-rose-400/75 tabular-nums tracking-wide">
                 {record.dateLabel}
               </p>
-              <p className="text-[13px] text-gray-700 leading-snug font-medium mt-0.5">
+              <p
+                className={`text-[13px] leading-snug font-medium mt-0.5 ${
+                  isDailyQuestion
+                    ? "text-rose-600/90 group-hover:text-rose-600"
+                    : "text-gray-700"
+                }`}
+              >
                 {record.title}
               </p>
+              {isDailyQuestion && (
+                <p className="text-[10px] text-rose-400/70 font-bold mt-1">
+                  タップして内容を見る →
+                </p>
+              )}
             </div>
+          </>
+        );
+
+        return (
+          <li key={record.id} className="relative pl-0.5">
+            {isDailyQuestion ? (
+              <button
+                type="button"
+                onClick={() => onDailyQuestionClick(record.sourceRef)}
+                className="group flex w-full gap-3 text-left rounded-xl -mx-1 px-1 py-1 hover:bg-rose-50/50 transition-colors"
+              >
+                {content}
+              </button>
+            ) : (
+              <div className="flex gap-3">{content}</div>
+            )}
           </li>
         );
       })}
@@ -67,6 +102,7 @@ export default function RecentRecordsSection({
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRoundId, setSelectedRoundId] = useState<string | null>(null);
 
   const remaining = Math.max(0, total - records.length);
 
@@ -122,7 +158,10 @@ export default function RecentRecordsSection({
 
       {records.length > 0 ? (
         <>
-          <TimelineList records={records} />
+          <TimelineList
+            records={records}
+            onDailyQuestionClick={setSelectedRoundId}
+          />
 
           {hasMore && (
             <div className="mt-4">
@@ -163,6 +202,11 @@ export default function RecentRecordsSection({
       <p className="text-[10px] font-bold text-amber-400/70 text-right mt-3 tracking-widest">
         04
       </p>
+
+      <DailyQuestionRevealModal
+        roundId={selectedRoundId}
+        onClose={() => setSelectedRoundId(null)}
+      />
     </section>
   );
 }
