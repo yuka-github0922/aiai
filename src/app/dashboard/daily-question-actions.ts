@@ -9,6 +9,20 @@ import {
   type DailyQuestionState,
 } from "@/lib/daily-question-types";
 
+function mapDailyQuestionRpcError(
+  message: string | undefined,
+  fallback = "送信に失敗しました。もう一度お試しください。"
+): string {
+  if (!message) return fallback;
+  if (message.includes("next question not unlocked yet")) {
+    return "次の質問は20:00以降に届きます";
+  }
+  if (message.includes("advance required before new answer")) {
+    return "先に「次の質問へ」を押してください";
+  }
+  return fallback;
+}
+
 function validateText(value: string, label: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return `${label}を入力してください`;
@@ -29,7 +43,7 @@ async function submitRpc(
 
   if (error) {
     console.error(`${fn} error:`, error);
-    return { state: null, error: "送信に失敗しました。もう一度お試しください。" };
+    return { state: null, error: mapDailyQuestionRpcError(error.message) };
   }
 
   revalidatePath("/home");
@@ -62,7 +76,13 @@ export async function advanceDailyQuestionForUser(): Promise<{
 
   if (error) {
     console.error("advance_daily_question_for_user error:", error);
-    return { state: null, error: "進行に失敗しました。もう一度お試しください。" };
+    return {
+      state: null,
+      error: mapDailyQuestionRpcError(
+        error.message,
+        "進行に失敗しました。もう一度お試しください。"
+      ),
+    };
   }
 
   revalidatePath("/home");

@@ -9,6 +9,7 @@ export type DailyQuestionPhase =
   | "needs_my_answer"
   | "needs_my_guess"
   | "waiting_partner"
+  | "waiting_next_question"
   | "revealed"
   | "all_completed";
 
@@ -28,6 +29,8 @@ export type DailyQuestionVisible = {
   partnerGuess?: string;
   revealedAt?: string;
   understanding?: DailyQuestionScore;
+  unlockAt?: string;
+  partnerPendingAdvance?: boolean;
 };
 
 export type DailyQuestionState = DailyQuestionHidden | DailyQuestionVisible;
@@ -47,6 +50,8 @@ export type DailyQuestionRpcState = {
   understanding_partner_score?: number;
   understanding_couple_score?: number;
   understanding_model?: string;
+  unlock_at?: string;
+  partner_pending_advance?: boolean;
 };
 
 export type DailyQuestionRoundDetail = {
@@ -154,6 +159,18 @@ export function parseDailyQuestionState(
       question: raw.question ?? "",
       roundId: raw.round_id ?? null,
       canAdvance: false,
+    };
+  }
+
+  if (raw.phase === "waiting_next_question") {
+    return {
+      visible: true,
+      phase: "waiting_next_question",
+      question: "",
+      roundId: raw.round_id ?? null,
+      canAdvance: false,
+      unlockAt: raw.unlock_at,
+      partnerPendingAdvance: raw.partner_pending_advance === true,
     };
   }
 

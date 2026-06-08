@@ -12,6 +12,7 @@ import {
   type DailyQuestionState,
   type DailyQuestionVisible,
 } from "@/lib/daily-question-types";
+import { formatDailyQuestionUnlockAt } from "@/lib/daily-question-unlock";
 import DailyQuestionRevealSection from "./daily-question-reveal-section";
 import DailyQuestionUnderstandingScore from "./daily-question-understanding-score";
 
@@ -139,11 +140,13 @@ export default function DailyQuestionCard({ initialState }: Props) {
         </p>
       </div>
 
-      {state.phase !== "all_completed" && (
-        <p className="text-[15px] font-bold text-gray-800 leading-snug mb-4">
-          {state.question}
-        </p>
-      )}
+      {state.phase !== "all_completed" &&
+        state.phase !== "waiting_next_question" &&
+        state.question && (
+          <p className="text-[15px] font-bold text-gray-800 leading-snug mb-4">
+            {state.question}
+          </p>
+        )}
 
       {state.phase === "needs_my_answer" && (
         <TextSubmitForm
@@ -180,6 +183,30 @@ export default function DailyQuestionCard({ initialState }: Props) {
           <span className="text-xs text-gray-500">
             ふたりの回答と予想が揃うと、お互いの内容が開示されます
           </span>
+        </WaitingMessage>
+      )}
+
+      {state.phase === "waiting_next_question" && (
+        <WaitingMessage>
+          {state.partnerPendingAdvance ? (
+            <>
+              ⏳ 相手の確認待ち
+              <br />
+              <span className="text-xs text-gray-500">
+                ふたりが「次の質問へ」を押すと、次の質問の準備が整います
+              </span>
+            </>
+          ) : (
+            <>
+              🌙 次の質問は今夜 20:00 以降
+              <br />
+              <span className="text-xs text-gray-500">
+                {state.unlockAt
+                  ? `${formatDailyQuestionUnlockAt(state.unlockAt)} ごろに届きます`
+                  : "20:00 以降に新しい質問が届きます"}
+              </span>
+            </>
+          )}
         </WaitingMessage>
       )}
 
@@ -231,7 +258,7 @@ export default function DailyQuestionCard({ initialState }: Props) {
                   {isAdvancing ? "進行中..." : "次の質問へ"}
                 </button>
                 <p className="text-[10px] text-gray-400 text-center mt-2 leading-relaxed">
-                  あとから見返すときは、きろくタブから確認できます
+                  次の質問は 20:00 以降に届きます。きろくタブからいつでも見返せます
                 </p>
               </div>
             )}
