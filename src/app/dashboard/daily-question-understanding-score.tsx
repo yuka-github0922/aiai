@@ -1,23 +1,10 @@
-import {
-  computeUnderstandingScore,
-  type UnderstandingScoreInput,
-} from "@/lib/daily-question-score";
+import type { DailyQuestionScore } from "@/lib/daily-question-score";
 
-type Props = UnderstandingScoreInput;
+type Props = {
+  score: DailyQuestionScore;
+};
 
-export default function DailyQuestionUnderstandingScore({
-  myGuess,
-  myAnswer,
-  partnerGuess,
-  partnerAnswer,
-}: Props) {
-  const score = computeUnderstandingScore({
-    myGuess,
-    myAnswer,
-    partnerGuess,
-    partnerAnswer,
-  });
-
+export default function DailyQuestionUnderstandingScore({ score }: Props) {
   return (
     <div className="rounded-xl border-2 border-violet-100/80 bg-gradient-to-r from-violet-50/50 via-white to-rose-50/40 px-4 py-3.5 space-y-2.5">
       <p className="text-sm font-black text-violet-600/90">

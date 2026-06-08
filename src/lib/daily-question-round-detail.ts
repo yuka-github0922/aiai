@@ -1,3 +1,4 @@
+import { attachUnderstandingToRoundDetail } from "@/lib/daily-question-score-service";
 import { createClient } from "@/lib/supabase/server";
 import {
   parseDailyQuestionRoundDetail,
@@ -18,5 +19,9 @@ export async function fetchDailyQuestionRoundDetail(
     return null;
   }
 
-  return parseDailyQuestionRoundDetail(data as DailyQuestionRoundDetailRpc | null);
+  const detail = parseDailyQuestionRoundDetail(
+    data as DailyQuestionRoundDetailRpc | null
+  );
+  if (!detail) return null;
+  return attachUnderstandingToRoundDetail(detail);
 }

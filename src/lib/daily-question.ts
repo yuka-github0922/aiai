@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { attachUnderstandingToState } from "@/lib/daily-question-score-service";
 import {
   parseDailyQuestionState,
   type DailyQuestionRpcState,
@@ -23,5 +24,6 @@ export async function fetchDailyQuestionState(): Promise<DailyQuestionState> {
     return { visible: false };
   }
 
-  return parseDailyQuestionState(data as DailyQuestionRpcState | null);
+  const state = parseDailyQuestionState(data as DailyQuestionRpcState | null);
+  return attachUnderstandingToState(state);
 }

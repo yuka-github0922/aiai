@@ -133,12 +133,9 @@ export default function DailyQuestionRevealModal({ roundId, onClose }: Props) {
                 </p>
               </div>
 
-              <DailyQuestionUnderstandingScore
-                myGuess={detail.myGuess}
-                myAnswer={detail.myAnswer}
-                partnerGuess={detail.partnerGuess}
-                partnerAnswer={detail.partnerAnswer}
-              />
+              {detail.understanding && (
+                <DailyQuestionUnderstandingScore score={detail.understanding} />
+              )}
 
               <DailyQuestionRevealSection
                 heading="相手の回答"

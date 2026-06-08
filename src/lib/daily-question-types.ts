@@ -1,3 +1,8 @@
+import {
+  getUnderstandingMessage,
+  type DailyQuestionScore,
+} from "@/lib/daily-question-score";
+
 export const DAILY_QUESTION_MAX_LENGTH = 80;
 
 export type DailyQuestionPhase =
@@ -22,6 +27,7 @@ export type DailyQuestionVisible = {
   partnerAnswer?: string;
   partnerGuess?: string;
   revealedAt?: string;
+  understanding?: DailyQuestionScore;
 };
 
 export type DailyQuestionState = DailyQuestionHidden | DailyQuestionVisible;
@@ -37,6 +43,10 @@ export type DailyQuestionRpcState = {
   partner_answer?: string;
   partner_guess?: string;
   revealed_at?: string;
+  understanding_my_score?: number;
+  understanding_partner_score?: number;
+  understanding_couple_score?: number;
+  understanding_model?: string;
 };
 
 export type DailyQuestionRoundDetail = {
@@ -47,6 +57,7 @@ export type DailyQuestionRoundDetail = {
   partnerAnswer: string;
   partnerGuess: string;
   revealedAt: string;
+  understanding?: DailyQuestionScore;
 };
 
 export type DailyQuestionRoundDetailRpc = {
@@ -58,6 +69,10 @@ export type DailyQuestionRoundDetailRpc = {
   partner_answer?: string;
   partner_guess?: string;
   revealed_at?: string;
+  understanding_my_score?: number | null;
+  understanding_partner_score?: number | null;
+  understanding_couple_score?: number | null;
+  understanding_model?: string | null;
 };
 
 export function parseDailyQuestionRoundDetail(
@@ -77,7 +92,7 @@ export function parseDailyQuestionRoundDetail(
     return null;
   }
 
-  return {
+  const detail: DailyQuestionRoundDetail = {
     question: raw.question,
     roundId: raw.round_id,
     myAnswer: raw.my_answer,
@@ -85,6 +100,43 @@ export function parseDailyQuestionRoundDetail(
     partnerAnswer: raw.partner_answer,
     partnerGuess: raw.partner_guess,
     revealedAt: raw.revealed_at,
+  };
+
+  if (
+    raw.understanding_couple_score !== null &&
+    raw.understanding_couple_score !== undefined &&
+    raw.understanding_my_score !== null &&
+    raw.understanding_my_score !== undefined &&
+    raw.understanding_partner_score !== null &&
+    raw.understanding_partner_score !== undefined
+  ) {
+    detail.understanding = {
+      coupleScore: raw.understanding_couple_score,
+      myScore: raw.understanding_my_score,
+      partnerScore: raw.understanding_partner_score,
+      message: getUnderstandingMessage(raw.understanding_couple_score),
+    };
+  }
+
+  return detail;
+}
+
+function buildUnderstandingFromRpc(
+  raw: DailyQuestionRpcState
+): DailyQuestionScore | undefined {
+  if (
+    raw.understanding_couple_score === undefined ||
+    raw.understanding_my_score === undefined ||
+    raw.understanding_partner_score === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    coupleScore: raw.understanding_couple_score,
+    myScore: raw.understanding_my_score,
+    partnerScore: raw.understanding_partner_score,
+    message: getUnderstandingMessage(raw.understanding_couple_score),
   };
 }
 
@@ -126,6 +178,10 @@ export function parseDailyQuestionState(
     state.partnerAnswer = raw.partner_answer;
     state.partnerGuess = raw.partner_guess;
     state.revealedAt = raw.revealed_at;
+    const understanding = buildUnderstandingFromRpc(raw);
+    if (understanding) {
+      state.understanding = understanding;
+    }
   }
 
   return state;

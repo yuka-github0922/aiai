@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { attachUnderstandingToState } from "@/lib/daily-question-score-service";
 import { createClient } from "@/lib/supabase/server";
 import {
   DAILY_QUESTION_MAX_LENGTH,
@@ -32,7 +33,8 @@ async function submitRpc(
   }
 
   revalidatePath("/home");
-  return { state: parseDailyQuestionState(data), error: null };
+  const state = await attachUnderstandingToState(parseDailyQuestionState(data));
+  return { state, error: null };
 }
 
 export async function submitDailyQuestionAnswer(
@@ -64,5 +66,6 @@ export async function advanceDailyQuestionForUser(): Promise<{
   }
 
   revalidatePath("/home");
-  return { state: parseDailyQuestionState(data), error: null };
+  const state = await attachUnderstandingToState(parseDailyQuestionState(data));
+  return { state, error: null };
 }

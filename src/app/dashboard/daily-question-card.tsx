@@ -195,12 +195,9 @@ export default function DailyQuestionCard({ initialState }: Props) {
               </p>
             </div>
 
-            <DailyQuestionUnderstandingScore
-              myGuess={state.myGuess}
-              myAnswer={state.myAnswer}
-              partnerGuess={state.partnerGuess}
-              partnerAnswer={state.partnerAnswer}
-            />
+            {state.understanding && (
+              <DailyQuestionUnderstandingScore score={state.understanding} />
+            )}
 
             <DailyQuestionRevealSection
               heading="相手の回答"

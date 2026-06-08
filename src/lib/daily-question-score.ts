@@ -98,7 +98,8 @@ export function maxCoupleScore(scores: DailyQuestionScore[]): number | null {
   return Math.max(...scores.map((score) => score.coupleScore));
 }
 
-export function computeUnderstandingScore(
+/** ルールベース fallback（OpenAI 失敗時のみ server から使用） */
+export function computeUnderstandingScoreFallback(
   input: UnderstandingScoreInput
 ): DailyQuestionScore {
   const myScore = scoreGuessAgainstAnswer(input.myGuess, input.partnerAnswer);
@@ -115,3 +116,6 @@ export function computeUnderstandingScore(
     message: getUnderstandingMessage(coupleScore),
   };
 }
+
+/** @deprecated computeUnderstandingScoreFallback を使用してください */
+export const computeUnderstandingScore = computeUnderstandingScoreFallback;
