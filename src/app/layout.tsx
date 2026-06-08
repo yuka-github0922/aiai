@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import RegisterServiceWorker from "@/components/pwa/register-service-worker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,10 +13,31 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const THEME_COLOR = "#f43f5e";
+
 export const metadata: Metadata = {
   title: "AiAi — ふたりのAIアドバイザー",
   description:
     "AiAiは、カップルのすれ違いをやさしくほどくAIアドバイザーです。相談内容はあなただけのもの。AIがパートナーのことを学び、的確なアドバイスをお届けします。",
+  applicationName: "AiAi",
+  appleWebApp: {
+    capable: true,
+    title: "AiAi",
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: THEME_COLOR,
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -25,10 +47,13 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="ja"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <RegisterServiceWorker />
+      </body>
     </html>
   );
 }
