@@ -9,6 +9,7 @@ import ConsultCta from "@/app/dashboard/consult-cta";
 import DashboardHero from "@/app/dashboard/dashboard-hero";
 import NudgeCard from "@/app/dashboard/nudge-card";
 import AiMemoriesSection from "@/app/dashboard/ai-memories-section";
+import DailyQuestionSection from "@/app/dashboard/daily-question-section";
 import DashboardDecorations from "@/app/dashboard/dashboard-decorations";
 
 export default async function HomePage() {
@@ -39,6 +40,8 @@ export default async function HomePage() {
         <NudgeCard message={ctx.nudgeMessage} />
 
         <AiMemoriesSection memories={aiMemories} />
+
+        <DailyQuestionSection />
 
         <ConsultCta />
       </div>
