@@ -1,4 +1,5 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import { formatSupabaseError } from "@/lib/fetch-cached-couple-traits";
 import {
   parseDailyQuestionRoundDetail,
   type DailyQuestionRoundDetail,
@@ -6,6 +7,14 @@ import {
 } from "@/lib/daily-question-types";
 
 const DEFAULT_LIMIT = 5;
+
+function isMissingRpcError(error: PostgrestError): boolean {
+  return (
+    error.code === "PGRST202" ||
+    error.message?.includes("get_recent_daily_question_rounds_for_chat") ||
+    error.message?.includes("Could not find the function")
+  );
+}
 
 export async function fetchRecentDailyQuestionsForChat(
   supabase: SupabaseClient,
@@ -17,10 +26,18 @@ export async function fetchRecentDailyQuestionsForChat(
   );
 
   if (error) {
-    console.error(
-      "[chat-daily-question-context] get_recent_daily_question_rounds_for_chat error:",
-      error
-    );
+    if (isMissingRpcError(error)) {
+      console.warn(
+        "[chat-daily-question-context] RPC not found — apply migration 20260522150000_get_recent_daily_question_rounds_for_chat.sql"
+      );
+    } else {
+      console.error(
+        formatSupabaseError(
+          error,
+          "[chat-daily-question-context] get_recent_daily_question_rounds_for_chat"
+        )
+      );
+    }
     return [];
   }
 

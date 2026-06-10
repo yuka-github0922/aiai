@@ -5,15 +5,19 @@ import {
   type CouplePortrait,
   type CouplePortraitInput,
 } from "@/lib/couple-portrait";
-import { regenerateCachedCoupleTraits } from "@/lib/regenerate-cached-couple-traits";
+import { getCoupleAvatarDisplayUrl } from "@/lib/couple-avatar-display-url";
+import {
+  fillMissingCoupleAvatars,
+  hasCoupleAvatars,
+  regenerateCachedCoupleTraits,
+} from "@/lib/regenerate-cached-couple-traits";
 import {
   COUPLE_TRAITS_PROMPT_VERSION,
   type CachedCoupleTraitsRow,
 } from "@/lib/couple-traits-types";
 
 function isCacheCurrent(row: CachedCoupleTraitsRow): boolean {
-  const version = row.source_summary?.prompt_version;
-  return version === COUPLE_TRAITS_PROMPT_VERSION;
+  return row.source_summary?.prompt_version === COUPLE_TRAITS_PROMPT_VERSION;
 }
 
 function portraitFromCache(row: CachedCoupleTraitsRow): CouplePortrait {
@@ -26,6 +30,7 @@ function portraitFromCache(row: CachedCoupleTraitsRow): CouplePortrait {
     traits: members.map((member) => ({
       name: member.name,
       traits: member.traits,
+      avatarUrl: member.avatar_url ?? null,
       isAiGenerated: true,
     })),
     recentNotices: [],
@@ -37,7 +42,20 @@ export async function resolveCouplePortrait(
   coupleId: string,
   fallbackInput: CouplePortraitInput
 ): Promise<CouplePortrait> {
-  const cached = await fetchCachedCoupleTraits(supabase, coupleId);
+  let cached = await fetchCachedCoupleTraits(supabase, coupleId);
+  if (cached && isCacheCurrent(cached) && !hasCoupleAvatars(cached)) {
+    const fillResult = await fillMissingCoupleAvatars(supabase, cached);
+    if (fillResult.saved && fillResult.selfTraits) {
+      cached = {
+        ...cached,
+        self_traits: fillResult.selfTraits,
+        partner_traits: fillResult.partnerTraits ?? cached.partner_traits,
+      };
+    } else {
+      cached = (await fetchCachedCoupleTraits(supabase, coupleId)) ?? cached;
+    }
+  }
+
   if (cached && isCacheCurrent(cached)) {
     const portrait = portraitFromCache(cached);
     if (portrait.traits.length > 0) {

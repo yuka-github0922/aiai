@@ -1,5 +1,5 @@
 /** プロンプト改訂時にインクリメント。キャッシュの自動再生成に使う */
-export const COUPLE_TRAITS_PROMPT_VERSION = "smile_intro_v1";
+export const COUPLE_TRAITS_PROMPT_VERSION = "smile_intro_v2";
 
 export type CoupleTraitMember = {
   userId: string;
@@ -16,6 +16,8 @@ export type CachedCoupleTraitMember = {
   user_id: string;
   name: string;
   traits: string[];
+  /** AiAi予想の似顔絵（data URL）。カップル共通キャッシュに保存 */
+  avatar_url?: string | null;
 };
 
 export type CachedCoupleTraitsRow = {

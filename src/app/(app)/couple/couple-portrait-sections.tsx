@@ -28,9 +28,9 @@ export function CoupleTraitsSection({ portrait }: Pick<Props, "portrait">) {
           <span className="text-rose-400">♡</span> ふたりの特徴
         </p>
         <p className="text-[10px] text-rose-400/60 mt-1 tracking-wide leading-relaxed">
-          AiAiが感じた「この人らしいな」を、
+          AiAiが予想した紹介文と似顔絵で、
           <br />
-          ふたりで見て微笑める紹介文
+          ふたりで笑い合えるプロフィール
         </p>
       </div>
 
@@ -49,16 +49,36 @@ export function CoupleTraitsSection({ portrait }: Pick<Props, "portrait">) {
               key={trait.name}
               className={`bg-gradient-to-r ${style} rounded-xl px-4 py-4 border-2`}
             >
-              <p className="text-[15px] font-black text-gray-800">{trait.name}</p>
-              <div className="mt-2.5 space-y-0.5">
-                {lines.map((line, lineIndex) => (
-                  <p
-                    key={`${trait.name}-${lineIndex}`}
-                    className="text-[13px] text-gray-600 leading-relaxed"
-                  >
-                    {line}
-                  </p>
-                ))}
+              <div className="flex gap-3.5 items-start">
+                {trait.avatarUrl ? (
+                  <div className="shrink-0 flex flex-col items-center gap-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={trait.avatarUrl}
+                      alt={`${trait.name}のAiAi予想似顔絵`}
+                      width={72}
+                      height={72}
+                      className="w-[72px] h-[72px] rounded-2xl border-2 border-white shadow-sm object-cover bg-white"
+                    />
+                    <span className="text-[9px] text-rose-400/70 font-bold tracking-wide">
+                      AiAiの予想
+                    </span>
+                  </div>
+                ) : null}
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] font-black text-gray-800">{trait.name}</p>
+                  <div className="mt-2.5 space-y-0.5">
+                    {lines.map((line, lineIndex) => (
+                      <p
+                        key={`${trait.name}-${lineIndex}`}
+                        className="text-[13px] text-gray-600 leading-relaxed"
+                      >
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                </div>
               </div>
             </li>
           );

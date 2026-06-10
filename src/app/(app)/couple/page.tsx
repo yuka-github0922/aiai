@@ -39,7 +39,7 @@ export default async function CouplePage() {
 
       <div className="relative z-10 max-w-lg mx-auto px-4 py-3 flex flex-col gap-3.5">
         <p className="text-[10px] text-center text-rose-400/70 tracking-wide -mb-1 leading-relaxed">
-          読むと「なんか嬉しい」と思える、ふたりの紹介文
+          AiAiがつくった紹介文と似顔絵で、ふたりで笑い合おう
         </p>
 
         <CoupleTraitsSection portrait={portrait} />

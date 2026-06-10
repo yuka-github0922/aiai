@@ -1,6 +1,7 @@
 export type PersonTrait = {
   name: string;
   traits: string[];
+  avatarUrl?: string | null;
   isAiGenerated?: boolean;
   /** @deprecated フォールバック表示用。AI生成時は使わない */
   typeLabel?: string;
