@@ -47,8 +47,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // ログイン済みで /login or /signup → /home へ
-  if (user && (pathname === "/login" || pathname === "/signup")) {
+  // ログイン済みで / or /login or /signup → /home へ
+  if (user && (pathname === "/" || pathname === "/login" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
     url.pathname = "/home";
     return NextResponse.redirect(url);
@@ -97,6 +97,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/",
     "/home",
     "/home/:path*",
     "/records",

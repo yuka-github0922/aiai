@@ -1,16 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import FloatingHearts from "./floating-hearts";
 
-export default async function TopPage() {
-  // ログイン済みならダッシュボードへ
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) redirect("/home");
-
+export default function TopPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* ナビゲーション */}

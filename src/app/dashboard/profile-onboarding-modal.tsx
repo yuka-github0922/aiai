@@ -368,7 +368,7 @@ export default function ProfileOnboardingModal({
             </div>
           )}
 
-          {step === "question" && question && (
+          {step === "question" && question && currentKey && (
             <div className="space-y-4">
               <ProfileOnboardingProgressBar
                 progress={progress}

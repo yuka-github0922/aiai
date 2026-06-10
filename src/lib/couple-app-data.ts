@@ -127,7 +127,7 @@ export async function requireCoupleAppContext(): Promise<CoupleAppContext> {
       partner_hint: resolvePartnerHint(r),
       created_at: r.created_at,
     }))
-    .filter((i) => i.partner_hint.trim().length > 0);
+    .filter((i: InsightRow) => i.partner_hint.trim().length > 0);
 
   const [nudgeMessage, interpretedMemoLabels] = await Promise.all([
     generateNudgeWithAI(decryptedInsights, anniversaries, memos),

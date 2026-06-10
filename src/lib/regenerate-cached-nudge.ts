@@ -94,17 +94,14 @@ export async function regenerateCachedNudge(
     anniversaries: anniversaries.length,
   });
 
-  const result = await generateNudgeWithAI(decryptedInsights, anniversaries, memos);
+  const body = await generateNudgeWithAI(decryptedInsights, anniversaries, memos);
 
-  if (!result.fromAI) {
-    console.log("[regenerateCachedNudge] skip upsert (fallback, not saved):", {
-      skipReason: result.skipReason,
-    });
-    return { saved: false, reason: result.skipReason ?? "fallback" };
+  if (!body.trim()) {
+    return { saved: false, reason: "empty" };
   }
 
   const { error: upsertError } = await supabase.rpc("upsert_cached_nudge", {
-    body_param: result.body,
+    body_param: body,
   });
 
   if (upsertError) {
