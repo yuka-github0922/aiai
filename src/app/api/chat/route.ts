@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import OpenAI from "openai";
 import { encrypt, decryptMessageBody } from "@/lib/encryption";
+import { fetchRecentDailyQuestionsForChat } from "@/lib/chat-daily-question-context";
 import { fetchChatProfileContext } from "@/lib/chat-profile-context";
 import { buildChatInstructions } from "@/lib/chat-instructions";
 
@@ -139,11 +140,13 @@ export async function POST(request: NextRequest) {
     body: decryptMessageBody(row),
   }));
 
-  // --- 相談者・パートナーのプロフィールを取得 ---
-  const [profileContext, partnerInsightResult] = await Promise.all([
-    fetchChatProfileContext(supabase, user.id),
-    supabase.rpc("get_partner_insights", { limit_count: 30 }),
-  ]);
+  // --- 相談者・パートナーのプロフィールとふたり質問履歴を取得 ---
+  const [profileContext, partnerInsightResult, dailyQuestionRounds] =
+    await Promise.all([
+      fetchChatProfileContext(supabase, user.id),
+      supabase.rpc("get_partner_insights", { limit_count: 30 }),
+      fetchRecentDailyQuestionsForChat(supabase, 5),
+    ]);
 
   // --- パートナーの時系列ヒント（SECURITY DEFINER RPC 経由のみ）---
   // ※ relationship_insights に authenticated は直接アクセス不可
@@ -165,7 +168,8 @@ export async function POST(request: NextRequest) {
       instructions: buildChatInstructions(
         profileContext,
         partnerInsights,
-        consultationTitle
+        consultationTitle,
+        dailyQuestionRounds
       ),
       input,
     }, { signal: request.signal });

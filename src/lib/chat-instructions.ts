@@ -1,4 +1,5 @@
 import { decryptHintBody } from "@/lib/encryption";
+import type { DailyQuestionRoundDetail } from "@/lib/daily-question-types";
 import type { ChatPartnerProfile, ChatProfileContext, ChatSelfProfile } from "@/lib/chat-profile-context";
 
 const BASE_INSTRUCTIONS = `あなたはパートナーとの関係に寄り添うAIアドバイザーです。
@@ -81,6 +82,15 @@ const PROFILE_GUIDANCE = `━━━━━━━━━━━━━━━━━━
 - パートナーだけを悪者にしない
 - 二人が理解し合える方向を優先する`;
 
+const DAILY_QUESTION_GUIDANCE = `━━━━━━━━━━━━━━━━━━
+【回答方針（ふたり質問履歴の扱い）】
+━━━━━━━━━━━━━━━━━━
+- ふたり質問の履歴は補助情報として扱う
+- 相談本文を最優先する
+- 個別の回答や予想を断定の根拠にしすぎない
+- 最近のズレや理解度の傾向を踏まえる参考にする
+- 「パートナーはこう答えた」「相手の予想はこうだった」と直接引用しすぎない`;
+
 type PartnerInsightRow = {
   partner_hint_encrypted: string | null;
   partner_hint_iv: string | null;
@@ -157,16 +167,54 @@ function buildPartnerProfileSection(partner: ChatPartnerProfile | null): string 
   );
 }
 
+function formatScoreValue(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "未設定";
+  return String(value);
+}
+
+function buildDailyQuestionSection(rounds: DailyQuestionRoundDetail[]): string {
+  if (rounds.length === 0) return "";
+
+  const blocks = rounds.map((round, index) => {
+    const lines = [
+      `質問: ${round.question}`,
+      `自分の回答: ${round.myAnswer}`,
+      `パートナーの回答: ${round.partnerAnswer}`,
+      `自分の予想: ${round.myGuess}`,
+      `パートナーの予想: ${round.partnerGuess}`,
+      `理解度（自分→パートナー）: ${formatScoreValue(round.understanding?.myScore)}`,
+      `理解度（パートナー→自分）: ${formatScoreValue(round.understanding?.partnerScore)}`,
+      `理解度（ふたり）: ${formatScoreValue(round.understanding?.coupleScore)}`,
+    ];
+
+    return `--- ${index + 1} ---\n${lines.join("\n")}`;
+  });
+
+  return (
+    "\n\n【最近のふたり質問（直近" +
+    rounds.length +
+    "件）】\n" +
+    "※ 開示済みのふたり質問。補助情報として参考にし、相談本文より優先しない。\n" +
+    blocks.join("\n\n")
+  );
+}
+
 export function buildChatInstructions(
   profileContext: ChatProfileContext,
   partnerInsights: PartnerInsightRow[],
-  consultationTitle: string | null
+  consultationTitle: string | null,
+  dailyQuestionRounds: DailyQuestionRoundDetail[] = []
 ): string {
   let instructions = BASE_INSTRUCTIONS + PROFILE_GUIDANCE;
 
   instructions += buildSelfProfileSection(profileContext.self);
   instructions += buildPartnerImpressionSection(profileContext.self);
   instructions += buildPartnerProfileSection(profileContext.partner);
+
+  if (dailyQuestionRounds.length > 0) {
+    instructions += DAILY_QUESTION_GUIDANCE;
+    instructions += buildDailyQuestionSection(dailyQuestionRounds);
+  }
 
   if (consultationTitle) {
     instructions += `\n\n【この相談スレッドのテーマ】\n${consultationTitle}\n※ 会話の文脈が不明な場合も、このテーマに沿った返答をしてください。`;
