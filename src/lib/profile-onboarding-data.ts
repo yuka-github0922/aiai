@@ -12,6 +12,7 @@ type RawProfileRow = {
 
 type RawSummaryRow = {
   birth_date: string | null;
+  gender: string | null;
   residence: string | null;
   mbti: string | null;
   animal_zodiac: string | null;
@@ -44,7 +45,7 @@ export async function fetchProfileOnboardingData(
     supabase
       .from("ai_summaries")
       .select(
-        "birth_date, residence, mbti, animal_zodiac, basic_values, communication_style, comfortable_phrases, avoid_phrases, notes, partner_impression"
+        "birth_date, gender, residence, mbti, animal_zodiac, basic_values, communication_style, comfortable_phrases, avoid_phrases, notes, partner_impression"
       )
       .eq("user_id", userId)
       .maybeSingle(),
@@ -71,6 +72,7 @@ export async function fetchProfileOnboardingData(
     displayName: p?.display_name ?? null,
     partnerNickname: p?.partner_nickname ?? null,
     birthDate: s?.birth_date ?? null,
+    gender: s?.gender ?? null,
     residence: s?.residence ?? null,
     mbti: s?.mbti ?? null,
     animalZodiac: s?.animal_zodiac ?? null,

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { GENDER_OPTIONS } from "@/lib/profile-onboarding-questions";
 import type { AiSummaryRow } from "./page";
 
 const MBTI_OPTIONS = [
@@ -13,8 +14,6 @@ const MBTI_OPTIONS = [
   "ISTP", "ISFP", "ESTP", "ESFP",
 ];
 
-
-const GENDER_OPTIONS = ["男性", "女性", "ノンバイナリー", "回答しない"];
 
 const CURRENT_YEAR = new Date().getFullYear();
 

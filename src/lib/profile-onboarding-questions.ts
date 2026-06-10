@@ -3,6 +3,13 @@ import type {
   ProfileOnboardingQuestion,
 } from "./profile-onboarding-types";
 
+export const GENDER_OPTIONS = [
+  "男性",
+  "女性",
+  "ノンバイナリー",
+  "回答しない",
+] as const;
+
 export const MBTI_OPTIONS = [
   "INTJ",
   "INTP",
@@ -36,6 +43,13 @@ export const PROFILE_ONBOARDING_QUESTIONS: ProfileOnboardingQuestion[] = [
     hint: "ふたりだけの呼び名でOK",
     placeholder: "例：たけちゃん、ゆい",
     inputType: "text",
+  },
+  {
+    key: "gender",
+    prompt: "性別を教えてくれる？",
+    hint: "答えたくなければスキップでOK",
+    placeholder: "",
+    inputType: "gender",
   },
   {
     key: "birth_date",

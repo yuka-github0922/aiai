@@ -19,6 +19,8 @@ function hasAnswer(
       return !!data.partnerNickname?.trim();
     case "birth_date":
       return !!data.birthDate;
+    case "gender":
+      return !!data.gender?.trim();
     case "residence":
       return !!data.residence?.trim();
     case "mbti":

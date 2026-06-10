@@ -108,6 +108,7 @@ function buildSelfProfileSection(self: ChatSelfProfile): string {
   const lines = [
     `・名前: ${formatProfileValue(self.displayName)}`,
     `・生年月日: ${formatProfileValue(self.birthDate)}`,
+    `・性別: ${formatProfileValue(self.gender)}`,
     `・MBTI: ${formatProfileValue(self.mbti)}`,
     `・動物占い: ${formatProfileValue(self.animalZodiac)}`,
     `・居住地: ${formatProfileValue(self.residence)}`,

@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type ChatSelfProfile = {
   displayName: string | null;
   birthDate: string | null;
+  gender: string | null;
   mbti: string | null;
   animalZodiac: string | null;
   residence: string | null;
@@ -36,6 +37,7 @@ type SelfProfileRow = {
 
 type SelfSummaryRow = {
   birth_date: string | null;
+  gender: string | null;
   mbti: string | null;
   animal_zodiac: string | null;
   residence: string | null;
@@ -71,7 +73,7 @@ export async function fetchChatProfileContext(
     supabase
       .from("ai_summaries")
       .select(
-        "birth_date, mbti, animal_zodiac, residence, basic_values, partner_impression"
+        "birth_date, gender, mbti, animal_zodiac, residence, basic_values, partner_impression"
       )
       .eq("user_id", userId)
       .maybeSingle(),
@@ -88,6 +90,7 @@ export async function fetchChatProfileContext(
     self: {
       displayName: profile?.display_name ?? null,
       birthDate: summary?.birth_date ?? null,
+      gender: summary?.gender ?? null,
       mbti: summary?.mbti ?? null,
       animalZodiac: summary?.animal_zodiac ?? null,
       residence: summary?.residence ?? null,

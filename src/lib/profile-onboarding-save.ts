@@ -130,6 +130,10 @@ export async function saveProfileOnboardingAnswer(
       return upsertSummaryFields(userId, {
         birth_date_param: trimmed || null,
       });
+    case "gender":
+      return upsertSummaryFields(userId, {
+        gender_param: trimmed || null,
+      });
     case "residence":
       return upsertSummaryFields(userId, {
         residence_param: trimmed || null,

@@ -1,6 +1,7 @@
 export const PROFILE_ONBOARDING_FIELD_KEYS = [
   "display_name",
   "partner_nickname",
+  "gender",
   "birth_date",
   "residence",
   "mbti",
@@ -22,6 +23,7 @@ export const PROFILE_ONBOARDING_TOTAL = PROFILE_ONBOARDING_FIELD_KEYS.length;
 export type ProfileOnboardingInputType =
   | "text"
   | "date"
+  | "gender"
   | "mbti"
   | "textarea"
   | "anniversary";
@@ -39,6 +41,7 @@ export type ProfileOnboardingData = {
   displayName: string | null;
   partnerNickname: string | null;
   birthDate: string | null;
+  gender: string | null;
   residence: string | null;
   mbti: string | null;
   animalZodiac: string | null;

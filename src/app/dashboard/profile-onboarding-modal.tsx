@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
+  GENDER_OPTIONS,
   MBTI_OPTIONS,
   getProfileOnboardingQuestion,
 } from "@/lib/profile-onboarding-questions";
@@ -50,6 +51,8 @@ function getInitialValue(
       return data.partnerNickname ?? "";
     case "birth_date":
       return data.birthDate ?? "";
+    case "gender":
+      return data.gender ?? "";
     case "residence":
       return data.residence ?? "";
     case "mbti":
@@ -422,6 +425,25 @@ export default function ProfileOnboardingModal({
                 />
               )}
 
+              {question.inputType === "gender" && (
+                <div className="flex flex-wrap gap-2">
+                  {GENDER_OPTIONS.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setValue(option)}
+                      className={`px-3 py-2 rounded-xl text-sm font-bold border-2 transition-colors ${
+                        value === option
+                          ? "bg-violet-500 border-violet-500 text-white"
+                          : "bg-white border-gray-100 text-gray-600 hover:border-violet-200"
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {question.inputType === "mbti" && (
                 <div className="space-y-2">
                   <div className="flex flex-wrap gap-1.5">
@@ -567,6 +589,8 @@ function applyAnswer(
       return { ...data, partnerNickname: trimmed };
     case "birth_date":
       return { ...data, birthDate: trimmed };
+    case "gender":
+      return { ...data, gender: trimmed };
     case "residence":
       return { ...data, residence: trimmed };
     case "mbti":
