@@ -27,27 +27,39 @@ export function CoupleTraitsSection({ portrait }: Pick<Props, "portrait">) {
         <p className="text-sm font-black text-gray-800 tracking-tight">
           <span className="text-rose-400">♡</span> ふたりの特徴
         </p>
-        <p className="text-[10px] text-rose-400/60 mt-1 tracking-wide">
-          AiAiが会話から感じ取った、ふたりらしさ
+        <p className="text-[10px] text-rose-400/60 mt-1 tracking-wide leading-relaxed">
+          AiAiが感じた「この人らしいな」を、
+          <br />
+          ふたりで見て微笑める紹介文
         </p>
       </div>
 
-      <ul className="space-y-2.5">
+      <ul className="space-y-3">
         {portrait.traits.map((trait, index) => {
           const style = TRAIT_STYLES[index % TRAIT_STYLES.length];
+          const lines =
+            trait.traits.length > 0
+              ? trait.traits
+              : trait.description
+                ? [trait.description]
+                : [];
 
           return (
             <li
               key={trait.name}
-              className={`bg-gradient-to-r ${style} rounded-xl px-4 py-3.5 border-2`}
+              className={`bg-gradient-to-r ${style} rounded-xl px-4 py-4 border-2`}
             >
               <p className="text-[15px] font-black text-gray-800">{trait.name}</p>
-              <p className="text-xs font-bold text-rose-500/90 mt-1 tracking-wide">
-                {trait.typeLabel}
-              </p>
-              <p className="text-[13px] text-gray-600 mt-1 leading-snug">
-                {trait.description}
-              </p>
+              <div className="mt-2.5 space-y-0.5">
+                {lines.map((line, lineIndex) => (
+                  <p
+                    key={`${trait.name}-${lineIndex}`}
+                    className="text-[13px] text-gray-600 leading-relaxed"
+                  >
+                    {line}
+                  </p>
+                ))}
+              </div>
             </li>
           );
         })}

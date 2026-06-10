@@ -1,5 +1,6 @@
 import { requireCoupleAppContext } from "@/lib/couple-app-data";
-import { buildCouplePortrait } from "@/lib/couple-portrait";
+import { resolveCouplePortrait } from "@/lib/resolve-couple-portrait";
+import { createClient } from "@/lib/supabase/server";
 import { fetchProfileOnboardingData } from "@/lib/profile-onboarding-data";
 import AppHeader from "@/components/app/app-header";
 import DashboardDecorations from "@/app/dashboard/dashboard-decorations";
@@ -18,13 +19,18 @@ export default async function CouplePage() {
     ctx.membership.couple_id
   );
 
-  const portrait = buildCouplePortrait({
-    selfName: ctx.selfName,
-    partnerName: ctx.partnerName,
-    hasPartner,
-    mbti: ctx.mbti,
-    communicationStyle: ctx.communicationStyle,
-  });
+  const supabase = await createClient();
+  const portrait = await resolveCouplePortrait(
+    supabase,
+    ctx.membership.couple_id,
+    {
+      selfName: ctx.selfName,
+      partnerName: ctx.partnerName,
+      hasPartner,
+      mbti: ctx.mbti,
+      communicationStyle: ctx.communicationStyle,
+    }
+  );
 
   return (
     <main className="min-h-screen aiai-dashboard-bg relative">
@@ -32,8 +38,8 @@ export default async function CouplePage() {
       <AppHeader title="ふたり" />
 
       <div className="relative z-10 max-w-lg mx-auto px-4 py-3 flex flex-col gap-3.5">
-        <p className="text-[10px] text-center text-rose-400/70 tracking-wide -mb-1">
-          相談を重ねるほど、ふたりの変化が見えてくるよ
+        <p className="text-[10px] text-center text-rose-400/70 tracking-wide -mb-1 leading-relaxed">
+          読むと「なんか嬉しい」と思える、ふたりの紹介文
         </p>
 
         <CoupleTraitsSection portrait={portrait} />

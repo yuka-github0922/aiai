@@ -1,7 +1,11 @@
 export type PersonTrait = {
   name: string;
-  typeLabel: string;
-  description: string;
+  traits: string[];
+  isAiGenerated?: boolean;
+  /** @deprecated フォールバック表示用。AI生成時は使わない */
+  typeLabel?: string;
+  /** @deprecated フォールバック表示用。AI生成時は使わない */
+  description?: string;
 };
 
 /** 観察・変化の発見カード（将来は memos / insights / 相談履歴から生成） */
@@ -30,12 +34,22 @@ export type CouplePortrait = {
 export function buildCouplePortrait(input: CouplePortraitInput): CouplePortrait {
   const selfTrait: PersonTrait = {
     name: input.selfName,
-    typeLabel: input.mbti ?? "INFP",
+    traits: [
+      "相談を重ねるほど、",
+      "ここにあなたらしさが",
+      "紹介されていきます。",
+    ],
+    typeLabel: input.mbti ?? undefined,
     description: input.communicationStyle ?? "感情を重視する",
   };
 
   const partnerTrait: PersonTrait = {
     name: input.partnerName,
+    traits: [
+      "ふたりの会話が増えると、",
+      "パートナーの紹介も",
+      "ここに現れます。",
+    ],
     typeLabel: "INFP",
     description: "慎重に考えるタイプ",
   };
