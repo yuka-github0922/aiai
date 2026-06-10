@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import type { CouplePortrait } from "@/lib/couple-portrait";
 import InviteCodeCopy from "@/app/dashboard/invite-code-copy";
@@ -96,10 +97,15 @@ export function AiRecentNoticesSection({ portrait }: Pick<Props, "portrait">) {
 export function CoupleSettingsSection({
   inviteCode,
   hasPartner,
-}: Pick<Props, "inviteCode" | "hasPartner">) {
+  onboardingSlot,
+}: Pick<Props, "inviteCode" | "hasPartner"> & {
+  onboardingSlot?: ReactNode;
+}) {
   return (
     <section className="aiai-sticker-card px-4 py-5">
       <p className="text-sm font-black text-gray-800 mb-4">設定</p>
+
+      {onboardingSlot}
 
       <ul className="space-y-2">
         <li>

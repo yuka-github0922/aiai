@@ -12,9 +12,12 @@ export type AiSummaryRow = {
   notes: string | null;
   gender: string | null;
   birth_year: number | null;
+  birth_date: string | null;
   mbti: string | null;
   basic_values: string | null;
   animal_zodiac: string | null;
+  residence: string | null;
+  partner_impression: string | null;
 };
 
 export default async function SettingsPage() {
@@ -37,7 +40,7 @@ export default async function SettingsPage() {
       supabase
         .from("ai_summaries")
         .select(
-          "communication_style, comfortable_phrases, avoid_phrases, notes, gender, birth_year, mbti, basic_values, animal_zodiac"
+          "communication_style, comfortable_phrases, avoid_phrases, notes, gender, birth_year, birth_date, mbti, basic_values, animal_zodiac, residence, partner_impression"
         )
         .eq("user_id", user.id)
         .maybeSingle(),

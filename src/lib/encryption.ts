@@ -75,22 +75,41 @@ export function decryptMessageBody(row: {
   });
 }
 
+export type PartnerHintRow = {
+  partner_hint?: string | null;
+  partner_hint_encrypted?: string | null;
+  partner_hint_iv?: string | null;
+  partner_hint_auth_tag?: string | null;
+};
+
+/**
+ * relationship_insights のヒントを平文にする。
+ * 暗号列（新RPC）と partner_hint 平文（旧RPC）の両方に対応する。
+ */
+export function resolvePartnerHint(row: PartnerHintRow): string {
+  if (
+    row.partner_hint_encrypted &&
+    row.partner_hint_iv &&
+    row.partner_hint_auth_tag
+  ) {
+    try {
+      return decrypt({
+        encrypted: row.partner_hint_encrypted,
+        iv: row.partner_hint_iv,
+        authTag: row.partner_hint_auth_tag,
+      });
+    } catch {
+      return "";
+    }
+  }
+
+  const plain = row.partner_hint?.trim();
+  return plain ?? "";
+}
+
 /**
  * DB から取得した relationship_insights 行を復号する。
- * partner_hint_encrypted / partner_hint_iv / partner_hint_auth_tag が必須。
  */
-export function decryptHintBody(row: {
-  partner_hint_encrypted: string | null;
-  partner_hint_iv:        string | null;
-  partner_hint_auth_tag:  string | null;
-}): string {
-  if (!row.partner_hint_encrypted || !row.partner_hint_iv || !row.partner_hint_auth_tag) {
-    console.error("decryptHintBody: encrypted fields are missing", row);
-    return "";
-  }
-  return decrypt({
-    encrypted: row.partner_hint_encrypted,
-    iv:        row.partner_hint_iv,
-    authTag:   row.partner_hint_auth_tag,
-  });
+export function decryptHintBody(row: PartnerHintRow): string {
+  return resolvePartnerHint(row);
 }

@@ -78,12 +78,13 @@ export default function DailyQuestionRevealModal({ roundId, onClose }: Props) {
         className="fixed inset-0 z-[100] bg-black/45"
         onClick={onClose}
       />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="daily-question-reveal-title"
-        className="fixed left-1/2 top-1/2 z-[101] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 max-h-[85dvh] overflow-y-auto rounded-2xl border-2 border-rose-100 bg-white shadow-[0_16px_48px_rgba(0,0,0,0.18)]"
-      >
+      <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="daily-question-reveal-title"
+          className="pointer-events-auto w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-2xl border-2 border-rose-100 bg-white shadow-[0_16px_48px_rgba(0,0,0,0.18)]"
+        >
         <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-rose-50 bg-white/95 backdrop-blur-sm px-4 py-3.5 rounded-t-2xl">
           <div className="min-w-0">
             <p
@@ -154,6 +155,7 @@ export default function DailyQuestionRevealModal({ roundId, onClose }: Props) {
               />
             </>
           )}
+        </div>
         </div>
       </div>
     </>,

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { decryptHintBody } from "@/lib/encryption";
+import { resolvePartnerHint } from "@/lib/encryption";
 import { interpretMemosForDisplay } from "@/lib/interpret-memos-for-display";
 import { generateNudgeWithAI, type InsightRow, type AnniversaryRow } from "@/lib/nudge";
 import type { MemoForMemory } from "@/lib/ai-memories";
@@ -37,9 +37,10 @@ export type CoupleAppContext = {
 };
 
 type RawInsightRow = {
-  partner_hint_encrypted: string | null;
-  partner_hint_iv: string | null;
-  partner_hint_auth_tag: string | null;
+  partner_hint?: string | null;
+  partner_hint_encrypted?: string | null;
+  partner_hint_iv?: string | null;
+  partner_hint_auth_tag?: string | null;
   created_at: string;
 };
 
@@ -121,12 +122,12 @@ export async function requireCoupleAppContext(): Promise<CoupleAppContext> {
   const anniversaries = (rawAnniversaries ?? []) as AnniversaryRow[];
   const memos = (rawMemos ?? []) as MemoForMemory[];
 
-  const decryptedInsights: InsightRow[] = (rawInsights ?? []).map(
-    (r: RawInsightRow) => ({
-      partner_hint: decryptHintBody(r),
+  const decryptedInsights: InsightRow[] = (rawInsights ?? [])
+    .map((r: RawInsightRow) => ({
+      partner_hint: resolvePartnerHint(r),
       created_at: r.created_at,
-    })
-  );
+    }))
+    .filter((i) => i.partner_hint.trim().length > 0);
 
   const [nudgeMessage, interpretedMemoLabels] = await Promise.all([
     generateNudgeWithAI(decryptedInsights, anniversaries, memos),
@@ -169,7 +170,7 @@ export async function requireCoupleAppContext(): Promise<CoupleAppContext> {
     anniversaries,
     memos,
     memoCount: memoCount ?? 0,
-    insights: decryptedInsights.filter((i) => i.partner_hint.trim().length > 0),
+    insights: decryptedInsights,
     interpretedMemoLabels,
     nudgeMessage,
     summaryTags,

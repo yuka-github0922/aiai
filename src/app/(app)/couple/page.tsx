@@ -1,5 +1,6 @@
 import { requireCoupleAppContext } from "@/lib/couple-app-data";
 import { buildCouplePortrait } from "@/lib/couple-portrait";
+import { fetchProfileOnboardingData } from "@/lib/profile-onboarding-data";
 import AppHeader from "@/components/app/app-header";
 import DashboardDecorations from "@/app/dashboard/dashboard-decorations";
 import {
@@ -7,10 +8,15 @@ import {
   AiRecentNoticesSection,
   CoupleSettingsSection,
 } from "./couple-portrait-sections";
+import ProfileOnboardingCoupleSection from "./profile-onboarding-couple-section";
 
 export default async function CouplePage() {
   const ctx = await requireCoupleAppContext();
   const hasPartner = !!ctx.partner;
+  const onboardingData = await fetchProfileOnboardingData(
+    ctx.user.id,
+    ctx.membership.couple_id
+  );
 
   const portrait = buildCouplePortrait({
     selfName: ctx.selfName,
@@ -37,6 +43,12 @@ export default async function CouplePage() {
         <CoupleSettingsSection
           inviteCode={ctx.couple?.invite_code ?? null}
           hasPartner={hasPartner}
+          onboardingSlot={
+            <ProfileOnboardingCoupleSection
+              initialData={onboardingData}
+              hasPartner={hasPartner}
+            />
+          }
         />
       </div>
     </main>

@@ -23,8 +23,12 @@ type AiSummaryRow = {
   notes:               string | null;
   gender:              string | null;
   birth_year:          number | null;
+  birth_date:          string | null;
   mbti:                string | null;
   basic_values:        string | null;
+  animal_zodiac:       string | null;
+  residence:           string | null;
+  partner_impression:  string | null;
 };
 
 type CompactedFields = {
@@ -129,7 +133,7 @@ export async function POST() {
   const { data: currentSummary } = await supabase
     .from("ai_summaries")
     .select(
-      "communication_style, comfortable_phrases, avoid_phrases, notes, gender, birth_year, mbti, basic_values"
+      "communication_style, comfortable_phrases, avoid_phrases, notes, gender, birth_year, birth_date, mbti, basic_values, animal_zodiac, residence, partner_impression"
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -167,7 +171,14 @@ export async function POST() {
   // --- upsert_ai_summary RPC で ai_summaries を更新 ---
   // gender / birth_year / mbti / basic_values は既存値を維持
   const existing = (currentSummary as AiSummaryRow | null) ?? {
-    gender: null, birth_year: null, mbti: null, basic_values: null,
+    gender: null,
+    birth_year: null,
+    birth_date: null,
+    mbti: null,
+    basic_values: null,
+    animal_zodiac: null,
+    residence: null,
+    partner_impression: null,
   };
 
   const { error: upsertError } = await supabase.rpc("upsert_ai_summary", {
@@ -177,8 +188,12 @@ export async function POST() {
     notes_param:               compacted.notes               || null,
     gender_param:              existing.gender,
     birth_year_param:          existing.birth_year,
+    birth_date_param:          existing.birth_date,
     mbti_param:                existing.mbti,
     basic_values_param:        existing.basic_values,
+    animal_zodiac_param:       existing.animal_zodiac,
+    residence_param:           existing.residence,
+    partner_impression_param:  existing.partner_impression,
   });
 
   if (upsertError) {

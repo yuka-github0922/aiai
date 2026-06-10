@@ -35,13 +35,20 @@ export default function AiSummaryForm({
 
   // --- 基本プロフィール ---
   const [gender, setGender] = useState(initialSummary?.gender ?? "");
-  const [birthYear, setBirthYear] = useState(
-    initialSummary?.birth_year ? String(initialSummary.birth_year) : ""
+  const [birthDate, setBirthDate] = useState(
+    initialSummary?.birth_date ??
+      (initialSummary?.birth_year
+        ? `${initialSummary.birth_year}-01-01`
+        : "")
   );
+  const [residence, setResidence] = useState(initialSummary?.residence ?? "");
   const [mbti, setMbti] = useState(initialSummary?.mbti ?? "");
   const [animalZodiac, setAnimalZodiac] = useState(initialSummary?.animal_zodiac ?? "");
   const [basicValues, setBasicValues] = useState(
     initialSummary?.basic_values ?? ""
+  );
+  const [partnerImpression, setPartnerImpression] = useState(
+    initialSummary?.partner_impression ?? ""
   );
 
   // --- コミュニケーション傾向 ---
@@ -66,9 +73,16 @@ export default function AiSummaryForm({
     setSaved(false);
     setError(null);
 
-    const parsedBirthYear = birthYear ? parseInt(birthYear, 10) : null;
-    if (birthYear && (isNaN(parsedBirthYear!) || parsedBirthYear! < 1900 || parsedBirthYear! > CURRENT_YEAR)) {
-      setError("生まれ年が正しくありません。");
+    const parsedBirthYear = birthDate
+      ? parseInt(birthDate.slice(0, 4), 10)
+      : null;
+    if (
+      birthDate &&
+      (isNaN(parsedBirthYear!) ||
+        parsedBirthYear! < 1940 ||
+        parsedBirthYear! > CURRENT_YEAR)
+    ) {
+      setError("生年月日が正しくありません。");
       setSaving(false);
       return;
     }
@@ -106,9 +120,12 @@ export default function AiSummaryForm({
       notes_param:               notes.trim() || null,
       gender_param:              gender || null,
       birth_year_param:          parsedBirthYear,
+      birth_date_param:          birthDate || null,
       mbti_param:                mbti || null,
       basic_values_param:        basicValues.trim() || null,
       animal_zodiac_param:       animalZodiac || null,
+      residence_param:           residence.trim() || null,
+      partner_impression_param:  partnerImpression.trim() || null,
     });
 
     setSaving(false);
@@ -239,19 +256,31 @@ export default function AiSummaryForm({
             </select>
           </div>
 
-          {/* 生まれ年 */}
+          {/* 生年月日 */}
           <div>
-            <label htmlFor="birth_year" className="block text-sm font-medium text-gray-700 mb-1">
-              生まれ年
+            <label htmlFor="birth_date" className="block text-sm font-medium text-gray-700 mb-1">
+              生年月日
             </label>
             <input
-              id="birth_year"
-              type="number"
-              min={1940}
-              max={CURRENT_YEAR}
-              value={birthYear}
-              onChange={(e) => setBirthYear(e.target.value)}
-              placeholder="例：1995"
+              id="birth_date"
+              type="date"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+            />
+          </div>
+
+          {/* 居住地 */}
+          <div className="col-span-2">
+            <label htmlFor="residence" className="block text-sm font-medium text-gray-700 mb-1">
+              居住地
+            </label>
+            <input
+              id="residence"
+              type="text"
+              value={residence}
+              onChange={(e) => setResidence(e.target.value)}
+              placeholder="例：東京、大阪の郊外"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
             />
           </div>
@@ -289,6 +318,25 @@ export default function AiSummaryForm({
             />
           </div>
         </div>
+      </div>
+
+      <hr className="border-gray-100" />
+
+      <div>
+        <label htmlFor="partner_impression" className="block text-sm font-medium text-gray-700 mb-1">
+          あなたから見たパートナー像
+        </label>
+        <p className="text-xs text-gray-400 mb-2">
+          相談の精度を上げるためのメモです。あなただけが見られます。
+        </p>
+        <textarea
+          id="partner_impression"
+          rows={2}
+          value={partnerImpression}
+          onChange={(e) => setPartnerImpression(e.target.value)}
+          placeholder="例：慎重だけど、一度決めたら本気。休日はゆっくり派"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 resize-none"
+        />
       </div>
 
       <hr className="border-gray-100" />
