@@ -12,17 +12,31 @@ function toDataUrl(b64: string, format: "png" | "webp" | "jpeg"): string {
   return `data:${mime};base64,${b64}`;
 }
 
-async function refineScenePrompt(worldBible: WorldBible): Promise<string> {
+const CONTINUITY_PREFIX =
+  "Same world, same composition, preserve the previous atmosphere and color palette. " +
+  "Only subtle additions, do not redesign the scene. ";
+
+async function refineScenePrompt(
+  worldBible: WorldBible,
+  options?: { continuity?: boolean }
+): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
   const draft = worldBible.scene_prompt;
-  if (!apiKey) return draft;
+  if (!apiKey) {
+    return options?.continuity ? `${CONTINUITY_PREFIX}${draft}` : draft;
+  }
 
   const openai = new OpenAI({ apiKey });
+
+  const continuityNote = options?.continuity
+    ? "This is a gentle evolution of an EXISTING scene — preserve layout, palette, and mood. "
+    : "";
 
   try {
     const response = await openai.responses.create({
       model: PROMPT_MODEL,
       instructions:
+        continuityNote +
         "Write ONE English paragraph for an AI image generator. " +
         "Soft pastel illustrated scenic view through an arch window, kawaii diorama landscape, " +
         "NOT photo, NOT sticker sheet, NOT 3D. No text in image. " +
@@ -31,12 +45,17 @@ async function refineScenePrompt(worldBible: WorldBible): Promise<string> {
     });
 
     const refined = response.output_text?.trim();
-    if (refined && refined.length > 0) return refined;
+    if (refined && refined.length > 0) {
+      if (options?.continuity && !refined.toLowerCase().includes("same world")) {
+        return `${CONTINUITY_PREFIX}${refined}`;
+      }
+      return refined;
+    }
   } catch (err) {
     console.error("[generateHeroSceneImage] prompt refine error:", err);
   }
 
-  return draft;
+  return options?.continuity ? `${CONTINUITY_PREFIX}${draft}` : draft;
 }
 
 async function generateWithGptImage(
@@ -78,7 +97,8 @@ async function generateWithDalle2(
 }
 
 export async function generateHeroSceneImage(
-  worldBible: WorldBible
+  worldBible: WorldBible,
+  options?: { continuity?: boolean }
 ): Promise<{ dataUrl: string | null; model: string | null }> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -86,7 +106,7 @@ export async function generateHeroSceneImage(
     return { dataUrl: null, model: null };
   }
 
-  const prompt = await refineScenePrompt(worldBible);
+  const prompt = await refineScenePrompt(worldBible, options);
   const openai = new OpenAI({ apiKey });
 
   for (const model of IMAGE_MODELS) {

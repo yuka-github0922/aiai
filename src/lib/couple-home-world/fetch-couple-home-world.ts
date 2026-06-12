@@ -9,6 +9,8 @@ import type {
 import {
   HOME_WORLD_ESTABLISHMENT_THRESHOLD,
   HOME_WORLD_GENERATION_STALE_MS,
+  HOME_WORLD_REGROWTH_MIN_HOURS,
+  HOME_WORLD_REGROWTH_MIN_NEW_ROUNDS,
 } from "@/lib/couple-home-world/types";
 
 function isMissingRelationError(error: PostgrestError): boolean {
@@ -41,10 +43,13 @@ function parseHomeWorldRow(data: unknown): CoupleHomeWorldRow | null {
     couple_id?: string;
     status?: CoupleHomeWorldStatus;
     hero_image_url?: string | null;
+    hero_image_version?: number;
     world_bible?: unknown;
+    source_round_ids?: string[];
     source_revealed_count?: number;
     generation_phase?: number;
     generated_at?: string | null;
+    last_regeneration_at?: string | null;
     updated_at?: string | null;
   };
 
@@ -54,10 +59,13 @@ function parseHomeWorldRow(data: unknown): CoupleHomeWorldRow | null {
     coupleId: row.couple_id,
     status: row.status,
     heroImageUrl: row.hero_image_url ?? null,
+    heroImageVersion: row.hero_image_version ?? 1,
     worldBible: parseWorldBible(row.world_bible),
+    sourceRoundIds: row.source_round_ids ?? [],
     sourceRevealedCount: row.source_revealed_count ?? 0,
     generationPhase: row.generation_phase ?? 1,
     generatedAt: row.generated_at ?? null,
+    lastRegenerationAt: row.last_regeneration_at ?? null,
     updatedAt: row.updated_at ?? null,
   };
 }
@@ -108,6 +116,42 @@ function isGenerationInProgress(row: CoupleHomeWorldRow | null): boolean {
   return Date.now() - updatedMs < HOME_WORLD_GENERATION_STALE_MS;
 }
 
+function hoursSince(iso: string | null): number | null {
+  if (!iso) return null;
+  const ms = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(ms)) return null;
+  return ms / (1000 * 60 * 60);
+}
+
+export function shouldScheduleHomeWorldRegrowth(
+  revealedCount: number,
+  row: CoupleHomeWorldRow | null
+): boolean {
+  if (!row || row.status !== "ready" || !row.heroImageUrl || !row.worldBible) {
+    return false;
+  }
+
+  if (isGenerationInProgress(row)) {
+    return false;
+  }
+
+  const newRevealedCount = revealedCount - row.sourceRevealedCount;
+  if (newRevealedCount <= 0) {
+    return false;
+  }
+
+  const conditionA = newRevealedCount >= HOME_WORLD_REGROWTH_MIN_NEW_ROUNDS;
+
+  const lastTouch = row.lastRegenerationAt ?? row.generatedAt;
+  const elapsedHours = hoursSince(lastTouch);
+  const conditionB =
+    elapsedHours !== null &&
+    elapsedHours >= HOME_WORLD_REGROWTH_MIN_HOURS &&
+    newRevealedCount >= 1;
+
+  return conditionA || conditionB;
+}
+
 export function deriveCoupleHomeSceneState(
   revealedCount: number,
   row: CoupleHomeWorldRow | null
@@ -116,7 +160,7 @@ export function deriveCoupleHomeSceneState(
     return "nascent";
   }
 
-  if (row?.status === "ready" && row.heroImageUrl) {
+  if (row?.heroImageUrl) {
     return "ready";
   }
 
@@ -132,12 +176,14 @@ export async function fetchCoupleHomeWorldDisplay(
   ]);
 
   const sceneState = deriveCoupleHomeSceneState(revealedCount, row);
+  const shouldRegrow = shouldScheduleHomeWorldRegrowth(revealedCount, row);
 
   return {
     sceneState,
     heroImageUrl: row?.heroImageUrl ?? null,
     uiTokens: row?.worldBible?.ui_tokens ?? null,
     revealedCount,
+    shouldRegrow,
   };
 }
 
@@ -149,7 +195,7 @@ export function shouldScheduleHomeWorldGeneration(
     return false;
   }
 
-  if (row?.status === "ready") {
+  if (row?.status === "ready" || row?.heroImageUrl) {
     return false;
   }
 

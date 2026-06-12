@@ -20,7 +20,8 @@ function parseDataUrl(
 export async function saveHomeWorldHeroToStorage(
   supabase: SupabaseClient,
   coupleId: string,
-  dataUrl: string
+  dataUrl: string,
+  version = 1
 ): Promise<string | null> {
   const parsed = parseDataUrl(dataUrl);
   if (!parsed) {
@@ -28,7 +29,7 @@ export async function saveHomeWorldHeroToStorage(
     return null;
   }
 
-  const path = `${coupleId}/hero-v1.${parsed.ext}`;
+  const path = `${coupleId}/hero-v${version}.${parsed.ext}`;
 
   const { error } = await supabase.storage.from(BUCKET).upload(path, parsed.buffer, {
     contentType: parsed.contentType,

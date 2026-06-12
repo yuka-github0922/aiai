@@ -29,7 +29,10 @@ export default function DashboardHero({
       {hasPartner ? (
         <>
           <HomeWorldGenerationTrigger
-            active={homeWorld?.sceneState === "establishing"}
+            active={
+              homeWorld?.sceneState === "establishing" ||
+              homeWorld?.shouldRegrow === true
+            }
           />
           <div className="aiai-arch-window bg-white px-5 pt-7 pb-5 relative">
             <span className="aiai-sticker-label absolute top-3 left-4 !bg-rose-200 !text-rose-800">
