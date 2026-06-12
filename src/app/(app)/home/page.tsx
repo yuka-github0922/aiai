@@ -4,6 +4,8 @@ import {
 } from "@/lib/couple-app-data";
 import { buildAiMemoriesLatest } from "@/lib/ai-memories";
 import { buildCoupleStats } from "@/lib/couple-stats";
+import { fetchCoupleHomeWorldDisplay } from "@/lib/couple-home-world/fetch-couple-home-world";
+import { createClient } from "@/lib/supabase/server";
 import { fetchProfileOnboardingData } from "@/lib/profile-onboarding-data";
 import { buildProfileOnboardingProgress } from "@/lib/profile-onboarding-state";
 import AppHeader from "@/components/app/app-header";
@@ -43,6 +45,11 @@ export default async function HomePage() {
 
   const coupleStats = buildCoupleStats(ctx.anniversaries);
 
+  const supabase = await createClient();
+  const homeWorld = hasPartner
+    ? await fetchCoupleHomeWorldDisplay(supabase)
+    : null;
+
   return (
     <main className="min-h-screen aiai-dashboard-bg relative">
       <DashboardDecorations />
@@ -55,6 +62,7 @@ export default async function HomePage() {
           hasPartner={hasPartner}
           stats={coupleStats}
           inviteCode={ctx.couple?.invite_code ?? null}
+          homeWorld={homeWorld}
         />
 
         <ProfileOnboardingSection
