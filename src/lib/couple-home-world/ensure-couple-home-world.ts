@@ -10,6 +10,10 @@ import {
   saveHomeWorldHeroToStorageWithAdmin,
 } from "@/lib/couple-home-world/couple-home-world-admin";
 import {
+  attachHomeThemeToAiOutput,
+  buildWorldBibleV3Document,
+} from "@/lib/couple-home-world/derive-home-theme";
+import {
   fetchCoupleHomeWorldRow,
   fetchRevealedDailyQuestionCount,
   shouldScheduleHomeWorldGeneration,
@@ -23,14 +27,50 @@ import {
 import { generateHeroSceneImage } from "@/lib/couple-home-world/generate-hero-scene-image";
 import { generateWorldBibleGrowthWithAI } from "@/lib/couple-home-world/generate-world-bible-growth-ai";
 import { generateWorldBibleWithAI } from "@/lib/couple-home-world/generate-world-bible-ai";
-import type { CoupleHomeWorldRow } from "@/lib/couple-home-world/types";
-import { HOME_WORLD_ESTABLISHMENT_THRESHOLD } from "@/lib/couple-home-world/types";
+import type { CoupleHomeWorldRow, ParsedWorldBible } from "@/lib/couple-home-world/types";
+import {
+  HOME_WORLD_ESTABLISHMENT_THRESHOLD,
+  HOME_WORLD_V3_GROWTH_PROMPT_VERSION,
+  HOME_WORLD_V3_IDENTITY_PROMPT_VERSION,
+} from "@/lib/couple-home-world/types";
 
 export type RunCoupleHomeWorldGenerationResult = {
   started: boolean;
   completed: boolean;
   reason?: string;
 };
+
+function buildStoredFromGrowth(
+  coupleId: string,
+  growthOutput: Awaited<ReturnType<typeof generateWorldBibleGrowthWithAI>>,
+  previous: ParsedWorldBible,
+  options: { uiChangeNeeded: boolean; presetShiftNeeded: boolean }
+) {
+  if (!growthOutput) return null;
+
+  const previousTheme = previous.homeTheme;
+  const shouldRefreshTheme =
+    options.uiChangeNeeded ||
+    options.presetShiftNeeded ||
+    !previousTheme;
+
+  const homeTheme = shouldRefreshTheme
+    ? attachHomeThemeToAiOutput(coupleId, growthOutput.output, {
+        previousDirections: previousTheme?.directions,
+        presetShiftNeeded: options.presetShiftNeeded,
+        memorySubjects: growthOutput.output.scene.embedded_memories.map(
+          (m) => m.subject
+        ),
+      })
+    : previousTheme!;
+
+  return buildWorldBibleV3Document(
+    growthOutput.output,
+    homeTheme,
+    HOME_WORLD_V3_GROWTH_PROMPT_VERSION,
+    growthOutput.flags
+  );
+}
 
 export async function runCoupleHomeWorldGeneration(
   userSupabase: SupabaseClient,
@@ -40,7 +80,7 @@ export async function runCoupleHomeWorldGeneration(
 ): Promise<RunCoupleHomeWorldGenerationResult> {
   await resetStaleCoupleHomeWorldGeneration(coupleId);
 
-  let row = await fetchCoupleHomeWorldRow(userSupabase);
+  let row = await fetchCoupleHomeWorldRow(userSupabase, coupleId);
 
   if (options?.forceRetry && row?.status === "generating") {
     if (row.heroImageUrl) {
@@ -51,7 +91,7 @@ export async function runCoupleHomeWorldGeneration(
         lastError: "manual_retry",
       });
     }
-    row = await fetchCoupleHomeWorldRow(userSupabase);
+    row = await fetchCoupleHomeWorldRow(userSupabase, coupleId);
   }
 
   const revealedCount = await fetchRevealedDailyQuestionCount(userSupabase);
@@ -99,8 +139,8 @@ export async function runCoupleHomeWorldGeneration(
   });
 
   try {
-    const worldBible = await generateWorldBibleWithAI(input);
-    if (!worldBible) {
+    const aiOutput = await generateWorldBibleWithAI(input);
+    if (!aiOutput) {
       await saveCoupleHomeWorldResultForCouple(coupleId, {
         status: "failed",
         lastError: "world_bible_generation_failed",
@@ -108,7 +148,26 @@ export async function runCoupleHomeWorldGeneration(
       return { started: true, completed: false, reason: "world_bible_generation_failed" };
     }
 
-    const { dataUrl, model } = await generateHeroSceneImage(worldBible);
+    const homeTheme = attachHomeThemeToAiOutput(coupleId, aiOutput, {
+      memorySubjects: aiOutput.scene.embedded_memories.map((m) => m.subject),
+    });
+
+    const stored = buildWorldBibleV3Document(
+      aiOutput,
+      homeTheme,
+      HOME_WORLD_V3_IDENTITY_PROMPT_VERSION,
+      {
+        visual_change_needed: true,
+        ui_change_needed: true,
+        identity_evolved: true,
+      }
+    );
+
+    const { dataUrl, model } = await generateHeroSceneImage({
+      scene: aiOutput.scene,
+      worldIdentity: aiOutput.world_identity,
+    });
+
     if (!dataUrl) {
       await saveCoupleHomeWorldResultForCouple(coupleId, {
         status: "failed",
@@ -133,7 +192,7 @@ export async function runCoupleHomeWorldGeneration(
     const saved = await saveCoupleHomeWorldResultForCouple(coupleId, {
       status: "ready",
       heroImageUrl,
-      worldBible,
+      worldBible: stored,
       sourceRoundIds: input.rounds.map((round) => round.roundId),
       sourceRevealedCount: input.revealedCount,
       model: model ?? "unknown",
@@ -149,6 +208,7 @@ export async function runCoupleHomeWorldGeneration(
     console.log("[couple-home-world] phase1 generation completed", {
       coupleId,
       heroImageUrl,
+      worldIdentity: aiOutput.world_identity.phrase,
     });
 
     revalidatePath("/home");
@@ -225,10 +285,20 @@ async function runCoupleHomeWorldRegrowth(
       };
     }
 
-    if (!growth.visualChangeNeeded) {
+    const stored = buildStoredFromGrowth(coupleId, growth, row.worldBible!, {
+      uiChangeNeeded: growth.flags.ui_change_needed,
+      presetShiftNeeded: growth.flags.preset_shift_needed,
+    });
+
+    if (!stored) {
+      await restoreCoupleHomeWorldReadyForCouple(coupleId, "theme_derivation_failed");
+      return { started: true, completed: false, reason: "theme_derivation_failed" };
+    }
+
+    if (!growth.flags.visual_change_needed) {
       const saved = await saveCoupleHomeWorldResultForCouple(coupleId, {
         status: "ready",
-        worldBible: growth.worldBible,
+        worldBible: stored,
         sourceRoundIds,
         sourceRevealedCount: regrowthInput.revealedCount,
         lastError: null,
@@ -244,7 +314,8 @@ async function runCoupleHomeWorldRegrowth(
 
       console.log("[couple-home-world] phase2 regrowth skipped image", {
         coupleId,
-        changeSummary: growth.changeSummary,
+        changeSummary: growth.flags.change_summary,
+        uiUpdated: growth.flags.ui_change_needed,
       });
 
       revalidatePath("/home");
@@ -252,9 +323,13 @@ async function runCoupleHomeWorldRegrowth(
     }
 
     const nextVersion = row.heroImageVersion + 1;
-    const { dataUrl, model } = await generateHeroSceneImage(growth.worldBible, {
-      continuity: true,
-    });
+    const { dataUrl, model } = await generateHeroSceneImage(
+      {
+        scene: growth.output.scene,
+        worldIdentity: growth.output.world_identity,
+      },
+      { continuity: true }
+    );
 
     if (!dataUrl) {
       await restoreCoupleHomeWorldReadyForCouple(
@@ -289,7 +364,7 @@ async function runCoupleHomeWorldRegrowth(
     const saved = await saveCoupleHomeWorldResultForCouple(coupleId, {
       status: "ready",
       heroImageUrl,
-      worldBible: growth.worldBible,
+      worldBible: stored,
       sourceRoundIds,
       sourceRevealedCount: regrowthInput.revealedCount,
       model: model ?? "unknown",
@@ -308,8 +383,9 @@ async function runCoupleHomeWorldRegrowth(
     console.log("[couple-home-world] phase2 regrowth completed", {
       coupleId,
       heroImageUrl,
-      changeSummary: growth.changeSummary,
+      changeSummary: growth.flags.change_summary,
       version: nextVersion,
+      worldIdentity: growth.output.world_identity.phrase,
     });
 
     revalidatePath("/home");

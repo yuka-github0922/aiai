@@ -1,10 +1,15 @@
 import "server-only";
 
 import OpenAI from "openai";
-import type { WorldBible } from "@/lib/couple-home-world/types";
+import type { WorldIdentity, WorldScene } from "@/lib/couple-home-world/types";
 
 const PROMPT_MODEL = "gpt-4.1-mini";
 const IMAGE_MODELS = ["gpt-image-1", "dall-e-2"] as const;
+
+export type HeroSceneInput = {
+  scene: WorldScene;
+  worldIdentity?: WorldIdentity | null;
+};
 
 function toDataUrl(b64: string, format: "png" | "webp" | "jpeg"): string {
   const mime =
@@ -17,11 +22,11 @@ const CONTINUITY_PREFIX =
   "Only subtle additions, do not redesign the scene. ";
 
 async function refineScenePrompt(
-  worldBible: WorldBible,
+  input: HeroSceneInput,
   options?: { continuity?: boolean }
 ): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
-  const draft = worldBible.scene_prompt;
+  const draft = input.scene.scene_prompt;
   if (!apiKey) {
     return options?.continuity ? `${CONTINUITY_PREFIX}${draft}` : draft;
   }
@@ -30,6 +35,10 @@ async function refineScenePrompt(
 
   const continuityNote = options?.continuity
     ? "This is a gentle evolution of an EXISTING scene — preserve layout, palette, and mood. "
+    : "";
+
+  const identityLine = input.worldIdentity
+    ? `World identity: ${input.worldIdentity.phrase}\nSensory: ${input.worldIdentity.sensory.join(", ")}\n`
     : "";
 
   try {
@@ -41,7 +50,9 @@ async function refineScenePrompt(
         "Soft pastel illustrated scenic view through an arch window, kawaii diorama landscape, " +
         "NOT photo, NOT sticker sheet, NOT 3D. No text in image. " +
         "Embed the couple's specific elements naturally in the scene.",
-      input: `Mood: ${worldBible.mood_summary}\nDraft: ${draft}`,
+      input:
+        identityLine +
+        `Mood: ${input.scene.mood_summary}\nDraft: ${draft}`,
     });
 
     const refined = response.output_text?.trim();
@@ -97,7 +108,7 @@ async function generateWithDalle2(
 }
 
 export async function generateHeroSceneImage(
-  worldBible: WorldBible,
+  input: HeroSceneInput,
   options?: { continuity?: boolean }
 ): Promise<{ dataUrl: string | null; model: string | null }> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -106,7 +117,7 @@ export async function generateHeroSceneImage(
     return { dataUrl: null, model: null };
   }
 
-  const prompt = await refineScenePrompt(worldBible, options);
+  const prompt = await refineScenePrompt(input, options);
   const openai = new OpenAI({ apiKey });
 
   for (const model of IMAGE_MODELS) {

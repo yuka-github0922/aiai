@@ -4,8 +4,7 @@ import { fetchRevealedDailyQuestionCount } from "@/lib/couple-home-world/fetch-c
 import type {
   HomeWorldGenerationInput,
   HomeWorldQuestionRound,
-  HomeWorldRegrowthInput,
-  WorldBible,
+  ParsedWorldBible,
 } from "@/lib/couple-home-world/types";
 import {
   HOME_WORLD_INPUT_LIMIT,
@@ -48,9 +47,15 @@ export async function fetchHomeWorldGenerationInput(
 export async function fetchHomeWorldRegrowthInput(
   supabase: SupabaseClient,
   names: { self: string; partner: string },
-  previousWorldBible: WorldBible,
+  previousWorldBible: ParsedWorldBible,
   previousSourceRoundIds: string[]
-): Promise<HomeWorldRegrowthInput | null> {
+): Promise<{
+  revealedCount: number;
+  previousWorldBible: ParsedWorldBible;
+  previousSourceRoundIds: string[];
+  newRounds: HomeWorldQuestionRound[];
+  recentRounds: HomeWorldQuestionRound[];
+} | null> {
   const [revealedCount, rounds] = await Promise.all([
     fetchRevealedDailyQuestionCount(supabase),
     fetchRecentDailyQuestionsForChat(supabase, HOME_WORLD_REGROWTH_CONTEXT_LIMIT),

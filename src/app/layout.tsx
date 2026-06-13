@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Serif_JP, Zen_Kurenaido } from "next/font/google";
 import RegisterServiceWorker from "@/components/pwa/register-service-worker";
 import "./globals.css";
 
@@ -11,6 +11,16 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const notoSerifJp = Noto_Serif_JP({
+  variable: "--font-noto-serif-jp",
+  weight: ["400", "600", "700"],
+});
+
+const zenKurenaido = Zen_Kurenaido({
+  variable: "--font-zen-kurenaido",
+  weight: "400",
 });
 
 const THEME_COLOR = "#f43f5e";
@@ -48,7 +58,7 @@ export default function RootLayout({
   return (
     <html
       lang="ja"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${notoSerifJp.variable} ${zenKurenaido.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

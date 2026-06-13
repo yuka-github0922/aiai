@@ -47,7 +47,10 @@ export default async function HomePage() {
 
   const supabase = await createClient();
   const homeWorld = hasPartner
-    ? await fetchCoupleHomeWorldDisplay(supabase)
+    ? await fetchCoupleHomeWorldDisplay(
+        supabase,
+        ctx.membership.couple_id as string
+      )
     : null;
 
   return (

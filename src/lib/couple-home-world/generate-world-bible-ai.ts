@@ -1,32 +1,95 @@
 import "server-only";
 
 import OpenAI from "openai";
-import {
-  HOME_WORLD_PROMPT_VERSION,
-  type HomeWorldGenerationInput,
-  type WorldBible,
-} from "@/lib/couple-home-world/types";
+import type { AiWorldBibleOutput, HomeWorldGenerationInput } from "@/lib/couple-home-world/types";
 
 const MODEL = "gpt-4o-mini";
 
 const SYSTEM_PROMPT =
   "あなたはカップルアプリのホーム画面アートディレクターです。\n" +
-  "直近の「ふたり質問」と回答だけを読み、ふたりだけの窓の向こうの景色を1枚で表現するための仕様を決めてください。\n\n" +
+  "直近の「ふたり質問」と回答だけを読み、このカップルだけの世界らしさを言語化してください。\n\n" +
   "【目的】\n" +
-  "ホームを開いた瞬間「この二人っぽい」と感じる、1枚の情景。\n" +
-  "「何を獲得したか」ではなく、関係全体の空気と、会話から浮かぶ具体物が自然に共存する世界。\n\n" +
-  "【優先順位】\n" +
-  "1. 全体の色味・空気感・構図（最優先）\n" +
-  "2. 具体物（小春、水族館、同棲など）は景色に溶け込む形で2〜4個\n" +
-  "3. 1つは最初に目に入る存在（noticed_first）、もう1つはよく見るとわかる（noticed_second/subtle）\n\n" +
+  "ホームを開いた瞬間「うちらの画面」と感じる、ふたり固有の世界観。\n" +
+  "テーマカテゴリではなく、この二人だけの phrase を書いてください。\n\n" +
+  "【出力するもの】\n" +
+  "- world_identity: phrase / mood / sensory / anchors\n" +
+  "- palette_hint: 温度・明度・彩度のヒントのみ\n" +
+  "- scene: hero 画像用の情景描写\n\n" +
   "【禁止】\n" +
-  "- コレクション・アイコン一覧・ステッカー配置のイメージ\n" +
-  "- 画像内テキスト・ラベル・枠\n" +
-  "- 相談・プロフィール情報の推測（入力にないことは足さない）\n\n" +
-  "【scene_prompt】\n" +
-  "英語2〜4文。arch window view, soft illustrated landscape/diorama, pastel, kawaii but scenic.\n" +
-  "NOT photo, NOT 3D, NOT sticker sheet. no text in image.\n" +
-  "具体物を naturally embedded in the scene と明記。";
+  "- hex カラーコード、CSS、preset 名、UI コンポーネント指定\n" +
+  "- コレクション・ステッカー配置のイメージ\n" +
+  "- 画像内テキスト\n" +
+  "- 入力にない情報の推測\n\n" +
+  "【scene.scene_prompt】\n" +
+  "英語2〜4文。arch window view, soft illustrated landscape, pastel, kawaii scenic.\n" +
+  "NOT photo, NOT 3D. no text in image.";
+
+const WORLD_IDENTITY_SCHEMA = {
+  type: "object",
+  properties: {
+    phrase: { type: "string" },
+    mood: { type: "string" },
+    sensory: {
+      type: "array",
+      items: { type: "string" },
+      minItems: 2,
+      maxItems: 5,
+    },
+    anchors: {
+      type: "array",
+      items: { type: "string" },
+      minItems: 2,
+      maxItems: 5,
+    },
+  },
+  required: ["phrase", "mood", "sensory", "anchors"],
+  additionalProperties: false,
+} as const;
+
+const PALETTE_HINT_SCHEMA = {
+  type: "object",
+  properties: {
+    temperature: { type: "string", enum: ["warm", "cool", "neutral"] },
+    brightness: { type: "string", enum: ["light", "medium", "dark"] },
+    saturation: { type: "string", enum: ["soft", "vivid"] },
+  },
+  required: ["temperature", "brightness", "saturation"],
+  additionalProperties: false,
+} as const;
+
+const SCENE_SCHEMA = {
+  type: "object",
+  properties: {
+    mood_summary: { type: "string" },
+    atmosphere: { type: "string" },
+    composition: { type: "string" },
+    embedded_memories: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          subject: { type: "string" },
+          how_it_appears: { type: "string" },
+          prominence: {
+            type: "string",
+            enum: ["noticed_first", "noticed_second", "subtle"],
+          },
+        },
+        required: ["subject", "how_it_appears", "prominence"],
+        additionalProperties: false,
+      },
+    },
+    scene_prompt: { type: "string" },
+  },
+  required: [
+    "mood_summary",
+    "atmosphere",
+    "composition",
+    "embedded_memories",
+    "scene_prompt",
+  ],
+  additionalProperties: false,
+} as const;
 
 function buildUserPrompt(input: HomeWorldGenerationInput): string {
   const blocks = input.rounds.map((round, index) => {
@@ -43,13 +106,13 @@ function buildUserPrompt(input: HomeWorldGenerationInput): string {
 
   return (
     `開示済みふたり質問: ${input.revealedCount}件\n` +
-    `以下 ${input.rounds.length} 件を参考に WorldBible を JSON で返してください。\n\n` +
+    `以下 ${input.rounds.length} 件から world_identity と scene を JSON で返してください。\n\n` +
     blocks.join("\n\n")
   );
 }
 
-function fallbackScenePrompt(bible: Partial<WorldBible>): string {
-  const mood = bible.mood_summary ?? "a cozy couple's world";
+function fallbackScenePrompt(partial: { mood_summary?: string }): string {
+  const mood = partial.mood_summary ?? "a cozy couple's world";
   return (
     `Soft pastel illustrated landscape seen through an arch window, ${mood}, ` +
     `kawaii flat scenic art, warm gentle atmosphere, not a photo, no text, ` +
@@ -59,7 +122,7 @@ function fallbackScenePrompt(bible: Partial<WorldBible>): string {
 
 export async function generateWorldBibleWithAI(
   input: HomeWorldGenerationInput
-): Promise<WorldBible | null> {
+): Promise<AiWorldBibleOutput | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     console.error("[generateWorldBibleWithAI] OPENAI_API_KEY is missing");
@@ -75,64 +138,16 @@ export async function generateWorldBibleWithAI(
       response_format: {
         type: "json_schema",
         json_schema: {
-          name: "home_world_bible",
+          name: "home_world_v3_identity",
           strict: true,
           schema: {
             type: "object",
             properties: {
-              mood_summary: { type: "string" },
-              atmosphere: { type: "string" },
-              palette: {
-                type: "object",
-                properties: {
-                  primary: { type: "string" },
-                  secondary: { type: "string" },
-                  accent: { type: "string" },
-                  sky: { type: "string" },
-                  ground: { type: "string" },
-                },
-                required: ["primary", "secondary", "accent", "sky", "ground"],
-                additionalProperties: false,
-              },
-              typography_mood: { type: "string" },
-              composition: { type: "string" },
-              embedded_memories: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    subject: { type: "string" },
-                    how_it_appears: { type: "string" },
-                    prominence: {
-                      type: "string",
-                      enum: ["noticed_first", "noticed_second", "subtle"],
-                    },
-                  },
-                  required: ["subject", "how_it_appears", "prominence"],
-                  additionalProperties: false,
-                },
-              },
-              scene_prompt: { type: "string" },
-              ui_tokens: {
-                type: "object",
-                properties: {
-                  heart_color: { type: "string" },
-                  subtitle_color: { type: "string" },
-                },
-                required: ["heart_color", "subtitle_color"],
-                additionalProperties: false,
-              },
+              world_identity: WORLD_IDENTITY_SCHEMA,
+              palette_hint: PALETTE_HINT_SCHEMA,
+              scene: SCENE_SCHEMA,
             },
-            required: [
-              "mood_summary",
-              "atmosphere",
-              "palette",
-              "typography_mood",
-              "composition",
-              "embedded_memories",
-              "scene_prompt",
-              "ui_tokens",
-            ],
+            required: ["world_identity", "palette_hint", "scene"],
             additionalProperties: false,
           },
         },
@@ -146,15 +161,21 @@ export async function generateWorldBibleWithAI(
     const raw = completion.choices[0]?.message?.content;
     if (!raw) return null;
 
-    const parsed = JSON.parse(raw) as Omit<WorldBible, "prompt_version">;
+    const parsed = JSON.parse(raw) as AiWorldBibleOutput;
 
     return {
-      prompt_version: HOME_WORLD_PROMPT_VERSION,
       ...parsed,
-      scene_prompt: parsed.scene_prompt?.trim() || fallbackScenePrompt(parsed),
+      scene: {
+        ...parsed.scene,
+        scene_prompt:
+          parsed.scene.scene_prompt?.trim() ||
+          fallbackScenePrompt(parsed.scene),
+      },
     };
   } catch (err) {
     console.error("[generateWorldBibleWithAI] error:", err);
     return null;
   }
 }
+
+export { WORLD_IDENTITY_SCHEMA, PALETTE_HINT_SCHEMA, SCENE_SCHEMA };

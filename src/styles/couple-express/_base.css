@@ -1,0 +1,204 @@
+/* Phase 3c — Expression layer base */
+
+.aiai-couple-world {
+  --expr-accent: var(--home-accent-heart, #fb7185);
+  --expr-text-primary: var(--home-accent-body, #1f2937);
+  --expr-text-muted: color-mix(in srgb, var(--expr-text-primary) 72%, transparent);
+  --expr-page-padding-y: 16px;
+  --expr-section-gap: 14px;
+  --expr-card-padding: 16px;
+  --expr-row-gap: 12px;
+  --expr-row-padding: 14px 16px;
+  --expr-card-bg: var(--couple-trait-shell-bg, rgba(255, 255, 255, 0.92));
+  --expr-card-border: var(--couple-trait-shell-border, #ffffff);
+  --expr-card-border-width: 2px;
+  --expr-card-radius: 1.25rem;
+  --expr-card-shadow: 4px 4px 0 var(--home-hero-card-shadow, rgba(148, 163, 184, 0.18));
+  --expr-card-backdrop-filter: none;
+  --expr-row-bg: var(--couple-trait-row-bg, rgba(255, 255, 255, 0.9));
+  --expr-row-border: var(--couple-trait-row-border, rgba(255, 255, 255, 0.9));
+  --expr-row-radius: 0.75rem;
+  --expr-font-display: var(--font-geist-sans), system-ui, sans-serif;
+  --expr-font-body: var(--font-geist-sans), system-ui, sans-serif;
+  --expr-heading-size: 0.875rem;
+  --expr-heading-weight: 900;
+  --expr-heading-tracking: -0.02em;
+  --expr-heading-transform: none;
+  --expr-avatar-radius: 1rem;
+  --expr-settings-bg: rgba(255, 255, 255, 0.92);
+  --expr-settings-border: #f3f4f6;
+  --expr-settings-text: #374151;
+  --expr-notice-accent: var(--expr-accent);
+
+  background-color: var(--home-bg-base, #f4f7fa);
+  background-image: var(
+    --home-bg-gradient,
+    linear-gradient(160deg, #fef3f2 0%, #f0f9ff 35%, #faf5ff 65%, #ffffff 100%)
+  );
+  color: var(--expr-text-primary);
+}
+
+.aiai-express-page-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--expr-section-gap);
+  padding-top: var(--expr-page-padding-y);
+  padding-bottom: var(--expr-page-padding-y);
+}
+
+.aiai-express-phrase-block {
+  padding: 0 0.25rem;
+}
+
+.aiai-couple-phrase {
+  font-family: var(--expr-font-display);
+  font-size: var(--expr-phrase-size, 1.25rem);
+  font-weight: var(--expr-phrase-weight, 900);
+  letter-spacing: var(--expr-phrase-tracking, -0.02em);
+  line-height: 1.35;
+  color: var(--couple-phrase-color, var(--expr-text-primary));
+}
+
+.aiai-express-card {
+  background: var(--expr-card-bg);
+  border: var(--expr-card-border-width) solid var(--expr-card-border);
+  border-radius: var(--expr-card-radius);
+  box-shadow: var(--expr-card-shadow);
+  backdrop-filter: var(--expr-card-backdrop-filter);
+  padding: var(--expr-card-padding);
+}
+
+.aiai-couple-world .aiai-express-card.aiai-sticker-card {
+  background: var(--expr-card-bg);
+  border: var(--expr-card-border-width) solid var(--expr-card-border);
+  border-radius: var(--expr-card-radius);
+  box-shadow: var(--expr-card-shadow);
+  backdrop-filter: var(--expr-card-backdrop-filter);
+}
+
+.aiai-couple-world .aiai-couple-traits-heading,
+.aiai-couple-world .aiai-couple-notices-heading,
+.aiai-couple-world .aiai-couple-settings-heading {
+  font-family: var(--expr-font-display);
+  font-size: var(--expr-heading-size);
+  font-weight: var(--expr-heading-weight);
+  letter-spacing: var(--expr-heading-tracking);
+  text-transform: var(--expr-heading-transform);
+  color: var(--expr-text-primary);
+}
+
+.aiai-couple-world .aiai-couple-traits-icon,
+.aiai-couple-world .aiai-couple-notices-icon {
+  color: var(--expr-accent);
+}
+
+.aiai-couple-world .aiai-couple-trait-list,
+.aiai-couple-world .aiai-couple-notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--expr-row-gap);
+}
+
+.aiai-couple-world .aiai-couple-trait-row,
+.aiai-couple-world .aiai-couple-notice-row {
+  background: var(--expr-row-bg);
+  border: 1px solid var(--expr-row-border);
+  border-radius: var(--expr-row-radius);
+  padding: var(--expr-row-padding);
+}
+
+.aiai-couple-world .aiai-couple-trait-name {
+  font-size: var(--expr-trait-name-size, 0.9375rem);
+  font-weight: 900;
+  color: var(--expr-text-primary);
+}
+
+.aiai-couple-world .aiai-couple-trait-body,
+.aiai-couple-world .aiai-couple-notice-label {
+  font-family: var(--expr-font-body);
+  font-size: 0.8125rem;
+  color: var(--expr-text-muted);
+  line-height: 1.55;
+}
+
+.aiai-couple-world .aiai-couple-trait-avatar {
+  border-radius: var(--expr-avatar-radius);
+  border: 2px solid var(--expr-row-border);
+  background: #ffffff;
+}
+
+.aiai-couple-world .aiai-couple-trait-badge {
+  font-size: 0.5625rem;
+  color: var(--home-accent-subtitle, rgba(244, 63, 94, 0.7));
+}
+
+.aiai-couple-world .aiai-couple-notice-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-left: 3px solid var(--expr-notice-accent);
+}
+
+.aiai-couple-world .aiai-couple-notice-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--expr-row-bg) 80%, white);
+  border: 1px solid var(--expr-row-border);
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.aiai-express-settings {
+  background: var(--expr-settings-bg);
+  border: var(--expr-card-border-width) solid var(--expr-settings-border);
+  border-radius: var(--expr-card-radius);
+  box-shadow: var(--expr-card-shadow);
+  padding: var(--expr-card-padding);
+}
+
+.aiai-couple-world .aiai-express-settings-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid var(--expr-settings-border);
+  background: color-mix(in srgb, var(--expr-settings-bg) 92%, white);
+  color: var(--expr-settings-text);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition: border-color 0.15s ease;
+}
+
+.aiai-couple-world .aiai-express-settings-link:hover {
+  border-color: color-mix(in srgb, var(--expr-accent) 35%, var(--expr-settings-border));
+}
+
+.aiai-couple-world .aiai-express-settings-chevron {
+  color: color-mix(in srgb, var(--expr-settings-text) 35%, transparent);
+}
+
+.aiai-couple-world .aiai-couple-notices-subtitle {
+  font-size: 0.625rem;
+  color: color-mix(in srgb, var(--expr-accent) 55%, var(--expr-text-muted));
+  margin-top: 0.25rem;
+  letter-spacing: 0.04em;
+}
+
+.aiai-couple-world .aiai-couple-settings-divider {
+  border-color: var(--expr-settings-border);
+}
+
+.aiai-couple-world .aiai-couple-settings-muted {
+  color: color-mix(in srgb, var(--expr-settings-text) 55%, transparent);
+}
+
+.aiai-couple-world .aiai-couple-settings-invite-hint {
+  color: color-mix(in srgb, var(--expr-accent) 70%, var(--expr-text-muted));
+}

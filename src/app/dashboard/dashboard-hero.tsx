@@ -21,11 +21,8 @@ export default function DashboardHero({
   inviteCode,
   homeWorld,
 }: Props) {
-  const heartColor = homeWorld?.uiTokens?.heart_color;
-  const subtitleColor = homeWorld?.uiTokens?.subtitle_color;
-
   return (
-    <section className="aiai-sticker-card overflow-hidden">
+    <section className="aiai-sticker-card aiai-home-hero-card overflow-hidden">
       {hasPartner ? (
         <>
           <HomeWorldGenerationTrigger
@@ -43,25 +40,17 @@ export default function DashboardHero({
             </span>
 
             {homeWorld ? (
-              <CoupleHomeScene display={homeWorld} />
+              <CoupleHomeScene display={homeWorld} variant="home" />
             ) : null}
 
             <div className="relative z-10 pt-3">
-              <p
-                className="text-center text-[10px] tracking-wide text-rose-400/90"
-                style={subtitleColor ? { color: subtitleColor } : undefined}
-              >
+              <p className="text-center text-[10px] tracking-wide text-rose-400/90">
                 今日も、ふたりのことを大切に
               </p>
 
               <h1 className="text-center text-base font-bold text-gray-800 mt-2 leading-snug">
                 <span className="aiai-marker-highlight">{selfName}</span>
-                <span
-                  className="mx-2 text-sm text-rose-400"
-                  style={heartColor ? { color: heartColor } : undefined}
-                >
-                  ♥
-                </span>
+                <span className="mx-2 text-sm text-rose-400">♥</span>
                 <span className="aiai-marker-highlight">{partnerName}</span>
               </h1>
 
@@ -83,11 +72,7 @@ export default function DashboardHero({
 
           {stats.daysUntilAnniversary !== null && (
             <div className="px-5 py-3.5 flex items-center justify-center gap-2 bg-gradient-to-r from-white via-rose-50/40 to-white">
-              <span
-                className="text-rose-300 text-xs"
-                style={heartColor ? { color: heartColor } : undefined}
-                aria-hidden="true"
-              >
+              <span className="text-rose-300 text-xs" aria-hidden="true">
                 ♥
               </span>
               <p className="text-xs text-gray-600">

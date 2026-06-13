@@ -4,7 +4,7 @@ import { formatSupabaseError } from "@/lib/fetch-cached-couple-traits";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import type {
   CoupleHomeWorldStatus,
-  WorldBible,
+  WorldBibleStored,
 } from "@/lib/couple-home-world/types";
 
 export async function resetStaleCoupleHomeWorldGeneration(
@@ -65,7 +65,7 @@ export async function restoreCoupleHomeWorldReadyForCouple(
 export type SaveCoupleHomeWorldParams = {
   status: CoupleHomeWorldStatus;
   heroImageUrl?: string | null;
-  worldBible?: WorldBible | null;
+  worldBible?: WorldBibleStored | null;
   sourceRoundIds?: string[];
   sourceRevealedCount?: number;
   model?: string;

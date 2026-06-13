@@ -121,3 +121,54 @@ body {
   animation: floatHeart ease-in-out infinite;
   will-change: transform, opacity;
 }
+
+.aiai-home-scene-placeholder {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 228, 230, 0.95),
+    rgba(224, 242, 254, 0.9)
+  );
+}
+
+/* ── Couple world — home dashboard scene helpers ── */
+
+.aiai-couple-arch {
+  background: var(--home-hero-bg, rgba(255, 255, 255, 0.92));
+  border: 2px solid var(--home-hero-border, #ffffff);
+  border-radius: 50% 50% 1.25rem 1.25rem / 42% 42% 1.25rem 1.25rem;
+  padding: 0.5rem 0.5rem 0;
+  overflow: hidden;
+}
+
+.aiai-couple-scene-placeholder {
+  background: linear-gradient(
+    to bottom,
+    var(--home-hero-placeholder-from, rgba(255, 228, 230, 0.95)),
+    var(--home-hero-placeholder-to, rgba(224, 242, 254, 0.9))
+  );
+}
+
+.aiai-couple-scene-caption {
+  color: var(--home-accent-subtitle, rgba(244, 63, 94, 0.85));
+}
+
+.aiai-couple-heart {
+  color: var(--home-accent-heart, #fb7185);
+}
+
+.aiai-couple-name {
+  background: linear-gradient(
+    transparent 55%,
+    var(--home-accent-marker, rgba(254, 240, 138, 0.65)) 55%
+  );
+}
+
+.aiai-couple-days-label,
+.aiai-couple-days-suffix {
+  color: var(--home-accent-num-label, rgba(244, 63, 94, 0.9));
+}
+
+.aiai-couple-days-num {
+  color: var(--home-accent-num, #f43f5e);
+  text-shadow: 2px 2px 0 var(--home-accent-num-shadow, rgba(251, 191, 36, 0.35));
+}

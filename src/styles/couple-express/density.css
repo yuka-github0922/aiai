@@ -1,0 +1,27 @@
+.aiai-express-density-airy {
+  --expr-page-padding-y: 20px;
+  --expr-section-gap: 18px;
+  --expr-card-padding: 20px 18px;
+  --expr-row-gap: 16px;
+  --expr-row-padding: 16px;
+  --expr-phrase-size: 1.3125rem;
+}
+
+.aiai-express-density-balanced {
+  --expr-page-padding-y: 16px;
+  --expr-section-gap: 14px;
+  --expr-card-padding: 16px;
+  --expr-row-gap: 12px;
+  --expr-row-padding: 14px 16px;
+  --expr-phrase-size: 1.25rem;
+}
+
+.aiai-express-density-compact {
+  --expr-page-padding-y: 12px;
+  --expr-section-gap: 10px;
+  --expr-card-padding: 14px;
+  --expr-row-gap: 8px;
+  --expr-row-padding: 12px 14px;
+  --expr-phrase-size: 1.0625rem;
+  --expr-trait-name-size: 0.875rem;
+}

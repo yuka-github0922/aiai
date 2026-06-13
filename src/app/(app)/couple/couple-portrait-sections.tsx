@@ -67,7 +67,9 @@ export function CoupleTraitsSection({ portrait }: Pick<Props, "portrait">) {
                 ) : null}
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-black text-gray-800">{trait.name}</p>
+                  <p className="text-[15px] font-black text-gray-800">
+                    {trait.name}
+                  </p>
                   <div className="mt-2.5 space-y-0.5">
                     {lines.map((line, lineIndex) => (
                       <p

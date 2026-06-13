@@ -1,0 +1,32 @@
+.aiai-express-type-serif {
+  --expr-font-display: var(--font-noto-serif-jp), "Hiragino Mincho ProN", serif;
+  --expr-phrase-weight: 600;
+}
+
+.aiai-express-type-sans {
+  --expr-font-display: var(--font-geist-sans), system-ui, sans-serif;
+  --expr-phrase-weight: 900;
+}
+
+.aiai-express-type-mono {
+  --expr-font-display: var(--font-geist-mono), "SF Mono", monospace;
+  --expr-phrase-weight: 700;
+  --expr-phrase-tracking: 0.1em;
+  --expr-phrase-size: 1.0625rem;
+}
+
+.aiai-express-type-mono .aiai-couple-traits-heading,
+.aiai-express-type-mono .aiai-couple-notices-heading {
+  letter-spacing: 0.15em;
+}
+
+.aiai-express-type-hand {
+  --expr-font-display: var(--font-zen-kurenaido), "Klee One", cursive;
+  --expr-phrase-weight: 400;
+  --expr-phrase-size: 1.3125rem;
+}
+
+.aiai-express-type-hand .aiai-couple-traits-heading,
+.aiai-express-type-hand .aiai-couple-notices-heading {
+  font-size: 0.8125rem;
+}

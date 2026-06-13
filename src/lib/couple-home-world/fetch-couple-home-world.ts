@@ -1,10 +1,10 @@
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { formatSupabaseError } from "@/lib/fetch-cached-couple-traits";
+import { parseWorldBible } from "@/lib/couple-home-world/parse-world-bible";
 import type {
   CoupleHomeWorldDisplay,
   CoupleHomeWorldRow,
   CoupleHomeWorldStatus,
-  WorldBible,
 } from "@/lib/couple-home-world/types";
 import {
   HOME_WORLD_ESTABLISHMENT_THRESHOLD,
@@ -12,6 +12,10 @@ import {
   HOME_WORLD_REGROWTH_MIN_HOURS,
   HOME_WORLD_REGROWTH_MIN_NEW_ROUNDS,
 } from "@/lib/couple-home-world/types";
+import {
+  resolveCoupleWorldTheme,
+  resolveWorldPhrase,
+} from "@/lib/couple-home-world/resolve-couple-world-display";
 
 function isMissingRelationError(error: PostgrestError): boolean {
   return (
@@ -29,14 +33,7 @@ function isMissingRpcError(error: PostgrestError, fn: string): boolean {
   );
 }
 
-function parseWorldBible(raw: unknown): WorldBible | null {
-  if (!raw || typeof raw !== "object") return null;
-  const bible = raw as Partial<WorldBible>;
-  if (!bible.scene_prompt || !bible.palette || !bible.ui_tokens) return null;
-  return bible as WorldBible;
-}
-
-function parseHomeWorldRow(data: unknown): CoupleHomeWorldRow | null {
+function parseHomeWorldRow(data: unknown, coupleId?: string): CoupleHomeWorldRow | null {
   if (!data || typeof data !== "object") return null;
 
   const row = data as {
@@ -55,12 +52,14 @@ function parseHomeWorldRow(data: unknown): CoupleHomeWorldRow | null {
 
   if (!row.couple_id || !row.status) return null;
 
+  const resolvedCoupleId = coupleId ?? row.couple_id;
+
   return {
     coupleId: row.couple_id,
     status: row.status,
     heroImageUrl: row.hero_image_url ?? null,
     heroImageVersion: row.hero_image_version ?? 1,
-    worldBible: parseWorldBible(row.world_bible),
+    worldBible: parseWorldBible(row.world_bible, resolvedCoupleId),
     sourceRoundIds: row.source_round_ids ?? [],
     sourceRevealedCount: row.source_revealed_count ?? 0,
     generationPhase: row.generation_phase ?? 1,
@@ -90,7 +89,8 @@ export async function fetchRevealedDailyQuestionCount(
 }
 
 export async function fetchCoupleHomeWorldRow(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  coupleId?: string
 ): Promise<CoupleHomeWorldRow | null> {
   const { data, error } = await supabase.rpc("get_couple_home_world");
 
@@ -106,7 +106,7 @@ export async function fetchCoupleHomeWorldRow(
   }
 
   const row = Array.isArray(data) ? data[0] : data;
-  return parseHomeWorldRow(row);
+  return parseHomeWorldRow(row, coupleId);
 }
 
 function isGenerationInProgress(row: CoupleHomeWorldRow | null): boolean {
@@ -168,20 +168,24 @@ export function deriveCoupleHomeSceneState(
 }
 
 export async function fetchCoupleHomeWorldDisplay(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  coupleId?: string
 ): Promise<CoupleHomeWorldDisplay> {
   const [revealedCount, row] = await Promise.all([
     fetchRevealedDailyQuestionCount(supabase),
-    fetchCoupleHomeWorldRow(supabase),
+    fetchCoupleHomeWorldRow(supabase, coupleId),
   ]);
 
   const sceneState = deriveCoupleHomeSceneState(revealedCount, row);
   const shouldRegrow = shouldScheduleHomeWorldRegrowth(revealedCount, row);
+  const theme = resolveCoupleWorldTheme(row);
 
   return {
     sceneState,
     heroImageUrl: row?.heroImageUrl ?? null,
-    uiTokens: row?.worldBible?.ui_tokens ?? null,
+    phrase: resolveWorldPhrase(row?.worldBible ?? null, sceneState),
+    homeThemeCssVars: theme.homeThemeCssVars,
+    expression: theme.expression,
     revealedCount,
     shouldRegrow,
   };

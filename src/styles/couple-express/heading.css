@@ -1,0 +1,37 @@
+.aiai-express-heading-minimal .aiai-couple-traits-header,
+.aiai-express-heading-minimal .aiai-couple-notices-header {
+  margin-bottom: 12px;
+}
+
+.aiai-express-heading-rule .aiai-couple-traits-heading,
+.aiai-express-heading-rule .aiai-couple-notices-heading {
+  border-bottom: 1px solid color-mix(in srgb, var(--expr-accent) 20%, transparent);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.aiai-express-heading-badge .aiai-couple-traits-heading,
+.aiai-express-heading-badge .aiai-couple-notices-heading {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid var(--expr-accent);
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-size: 0.625rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.aiai-express-heading-tape .aiai-couple-traits-heading,
+.aiai-express-heading-tape .aiai-couple-notices-heading {
+  display: inline-block;
+  background: color-mix(in srgb, #fde68a 85%, transparent);
+  padding: 2px 10px;
+  transform: rotate(-1deg);
+  margin-bottom: 12px;
+}
+
+.aiai-express-heading-tape .aiai-couple-traits-icon,
+.aiai-express-heading-tape .aiai-couple-notices-icon {
+  color: color-mix(in srgb, var(--expr-accent) 80%, #713f12);
+}
