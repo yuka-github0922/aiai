@@ -78,13 +78,13 @@ export default async function HomePage() {
           hasPartner={hasPartner}
         />
 
+        <ConsultCta />
+
         <NudgeCard message={ctx.nudgeMessage} />
 
         <AiMemoriesSection memories={aiMemories} />
 
         <DailyQuestionSection />
-
-        <ConsultCta />
       </div>
     </main>
   );

@@ -71,28 +71,26 @@ export default function DashboardHero({
                 </p>
               )}
 
+              {stats.daysUntilAnniversary !== null && (
+                <p className="text-center mt-3 text-xs text-gray-600">
+                  <span className="text-rose-300 text-xs mr-1" aria-hidden="true">
+                    ♥
+                  </span>
+                  {stats.upcomingAnniversaryTitle
+                    ? `${stats.upcomingAnniversaryTitle}まで `
+                    : "次の記念日まで "}
+                  <span className="font-bold text-rose-500 tabular-nums">
+                    {stats.daysUntilAnniversary}
+                  </span>
+                  日
+                </p>
+              )}
+
               {casualConsultationId ? (
                 <CasualChatComposer consultationId={casualConsultationId} />
               ) : null}
             </div>
           </div>
-
-          {stats.daysUntilAnniversary !== null && (
-            <div className="px-5 py-3.5 flex items-center justify-center gap-2 bg-gradient-to-r from-white via-rose-50/40 to-white">
-              <span className="text-rose-300 text-xs" aria-hidden="true">
-                ♥
-              </span>
-              <p className="text-xs text-gray-600">
-                {stats.upcomingAnniversaryTitle
-                  ? `${stats.upcomingAnniversaryTitle}まで `
-                  : "次の記念日まで "}
-                <span className="font-bold text-rose-500 tabular-nums">
-                  {stats.daysUntilAnniversary}
-                </span>
-                日
-              </p>
-            </div>
-          )}
         </>
       ) : (
         <div className="aiai-arch-window bg-gradient-to-br from-rose-100/80 via-violet-50/80 to-sky-100/80 px-5 py-8 text-center">
