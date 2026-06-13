@@ -11,13 +11,22 @@ import {
   hasCoupleAvatars,
   regenerateCachedCoupleTraits,
 } from "@/lib/regenerate-cached-couple-traits";
+import { regenerateCachedCoupleObservations } from "@/lib/regenerate-cached-couple-observations";
 import {
+  COUPLE_OBSERVATIONS_PROMPT_VERSION,
   COUPLE_TRAITS_PROMPT_VERSION,
   type CachedCoupleTraitsRow,
 } from "@/lib/couple-traits-types";
 
-function isCacheCurrent(row: CachedCoupleTraitsRow): boolean {
+function isTraitsCacheCurrent(row: CachedCoupleTraitsRow): boolean {
   return row.source_summary?.prompt_version === COUPLE_TRAITS_PROMPT_VERSION;
+}
+
+function isObservationsCacheCurrent(row: CachedCoupleTraitsRow): boolean {
+  return (
+    row.source_summary?.observations_prompt_version ===
+    COUPLE_OBSERVATIONS_PROMPT_VERSION
+  );
 }
 
 function portraitFromCache(row: CachedCoupleTraitsRow): CouplePortrait {
@@ -33,8 +42,25 @@ function portraitFromCache(row: CachedCoupleTraitsRow): CouplePortrait {
       avatarUrl: member.avatar_url ?? null,
       isAiGenerated: true,
     })),
-    recentNotices: [],
+    recentNotices: row.recent_notices ?? [],
   };
+}
+
+async function ensureObservationsCache(
+  supabase: SupabaseClient,
+  coupleId: string,
+  cached: CachedCoupleTraitsRow
+): Promise<CachedCoupleTraitsRow> {
+  if (isObservationsCacheCurrent(cached)) {
+    return cached;
+  }
+
+  const result = await regenerateCachedCoupleObservations(supabase);
+  if (!result.saved) {
+    return cached;
+  }
+
+  return (await fetchCachedCoupleTraits(supabase, coupleId)) ?? cached;
 }
 
 export async function resolveCouplePortrait(
@@ -43,7 +69,7 @@ export async function resolveCouplePortrait(
   fallbackInput: CouplePortraitInput
 ): Promise<CouplePortrait> {
   let cached = await fetchCachedCoupleTraits(supabase, coupleId);
-  if (cached && isCacheCurrent(cached) && !hasCoupleAvatars(cached)) {
+  if (cached && isTraitsCacheCurrent(cached) && !hasCoupleAvatars(cached)) {
     const fillResult = await fillMissingCoupleAvatars(supabase, cached);
     if (fillResult.saved && fillResult.selfTraits) {
       cached = {
@@ -56,13 +82,15 @@ export async function resolveCouplePortrait(
     }
   }
 
-  if (cached && isCacheCurrent(cached)) {
-    const portrait = portraitFromCache(cached);
+  if (cached && isTraitsCacheCurrent(cached)) {
+    const withObservations = await ensureObservationsCache(
+      supabase,
+      coupleId,
+      cached
+    );
+    const portrait = portraitFromCache(withObservations);
     if (portrait.traits.length > 0) {
-      return {
-        ...portrait,
-        recentNotices: buildCouplePortrait(fallbackInput).recentNotices,
-      };
+      return portrait;
     }
   }
 
@@ -70,11 +98,7 @@ export async function resolveCouplePortrait(
   if (regenerate.saved) {
     const fresh = await fetchCachedCoupleTraits(supabase, coupleId);
     if (fresh) {
-      const portrait = portraitFromCache(fresh);
-      return {
-        ...portrait,
-        recentNotices: buildCouplePortrait(fallbackInput).recentNotices,
-      };
+      return portraitFromCache(fresh);
     }
   }
 

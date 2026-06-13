@@ -4,8 +4,10 @@ import { formatSupabaseError } from "@/lib/fetch-cached-couple-traits";
 import { resolvePartnerHint } from "@/lib/encryption";
 import {
   COUPLE_TRAITS_PROMPT_VERSION,
+  COUPLE_OBSERVATIONS_PROMPT_VERSION,
   type CoupleTraitsGenerationContext,
   type CoupleTraitsInsightMember,
+  type CoupleTraitsMemoMember,
   type CoupleTraitsProfileMember,
 } from "@/lib/couple-traits-types";
 
@@ -27,15 +29,22 @@ function parseInsightMembers(raw: unknown): CoupleTraitsInsightMember[] {
   return raw as CoupleTraitsInsightMember[];
 }
 
+function parseMemoMembers(raw: unknown): CoupleTraitsMemoMember[] {
+  if (!Array.isArray(raw)) return [];
+  return raw as CoupleTraitsMemoMember[];
+}
+
 export async function fetchCoupleTraitsGenerationContext(
   supabase: SupabaseClient,
   viewerUserId: string
 ): Promise<CoupleTraitsGenerationContext> {
-  const [profilesResult, insightsResult, dailyQuestionRounds] = await Promise.all([
-    supabase.rpc("get_couple_profiles_for_traits"),
-    supabase.rpc("get_couple_insights_for_traits", { p_limit_per_member: 15 }),
-    fetchRecentDailyQuestionsForChat(supabase, 5),
-  ]);
+  const [profilesResult, insightsResult, memosResult, dailyQuestionRounds] =
+    await Promise.all([
+      supabase.rpc("get_couple_profiles_for_traits"),
+      supabase.rpc("get_couple_insights_for_traits", { p_limit_per_member: 15 }),
+      supabase.rpc("get_couple_memos_for_traits", { p_limit_per_member: 10 }),
+      fetchRecentDailyQuestionsForChat(supabase, 5),
+    ]);
 
   if (profilesResult.error) {
     console.error(
@@ -53,9 +62,18 @@ export async function fetchCoupleTraitsGenerationContext(
       )
     );
   }
+  if (memosResult.error) {
+    console.error(
+      formatSupabaseError(
+        memosResult.error,
+        "[couple-traits-context] get_couple_memos_for_traits"
+      )
+    );
+  }
 
   const profileMembers = parseProfileMembers(profilesResult.data);
   const insightMembers = parseInsightMembers(insightsResult.data);
+  const memoMembers = parseMemoMembers(memosResult.data);
 
   const insightMap = new Map(
     insightMembers.map((member) => [
@@ -63,6 +81,15 @@ export async function fetchCoupleTraitsGenerationContext(
       (member.insights ?? [])
         .map((row) => resolvePartnerHint(row))
         .filter((hint) => hint.trim().length > 0),
+    ])
+  );
+
+  const memoMap = new Map(
+    memoMembers.map((member) => [
+      member.user_id,
+      (member.memos ?? [])
+        .map((row) => row.content?.trim() ?? "")
+        .filter((content) => content.length > 0),
     ])
   );
 
@@ -80,6 +107,7 @@ export async function fetchCoupleTraitsGenerationContext(
           : null,
       },
       insights: insightMap.get(member.user_id) ?? [],
+      memos: memoMap.get(member.user_id) ?? [],
     };
   });
 
@@ -143,6 +171,28 @@ export function buildCoupleTraitsSourceSummary(
     insight_counts: context.members.map((member) => ({
       user_id: member.userId,
       count: member.insights.length,
+    })),
+    memo_counts: context.members.map((member) => ({
+      user_id: member.userId,
+      count: member.memos.length,
+    })),
+    daily_question_count: context.dailyQuestions.length,
+  };
+}
+
+export function buildCoupleObservationsSourceSummary(
+  context: CoupleTraitsGenerationContext
+): Record<string, unknown> {
+  return {
+    observations_prompt_version: COUPLE_OBSERVATIONS_PROMPT_VERSION,
+    member_count: context.members.length,
+    insight_counts: context.members.map((member) => ({
+      user_id: member.userId,
+      count: member.insights.length,
+    })),
+    memo_counts: context.members.map((member) => ({
+      user_id: member.userId,
+      count: member.memos.length,
     })),
     daily_question_count: context.dailyQuestions.length,
   };

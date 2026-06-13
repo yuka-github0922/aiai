@@ -1,6 +1,9 @@
 /** プロンプト改訂時にインクリメント。キャッシュの自動再生成に使う */
 export const COUPLE_TRAITS_PROMPT_VERSION = "smile_intro_v2";
 
+/** プロンプト改訂時にインクリメント。観察レポートの自動再生成に使う */
+export const COUPLE_OBSERVATIONS_PROMPT_VERSION = "observation_v1";
+
 export type CoupleTraitMember = {
   userId: string;
   name: string;
@@ -27,6 +30,23 @@ export type CachedCoupleTraitsRow = {
   generated_at: string;
   source_summary: Record<string, unknown> | null;
   model: string;
+  recent_notices?: CachedCoupleObservationNotice[];
+  observations_generated_at?: string | null;
+  observations_model?: string | null;
+};
+
+export type CachedCoupleObservationNotice = {
+  emoji: string;
+  label: string;
+};
+
+export type CoupleTraitsMemoMember = {
+  user_id: string;
+  display_name: string | null;
+  memos: {
+    content: string;
+    created_at: string;
+  }[];
 };
 
 export type CoupleTraitsProfileMember = {
@@ -60,6 +80,7 @@ export type CoupleTraitsGenerationContext = {
       partnerImpressionAboutOther: string | null;
     };
     insights: string[];
+    memos: string[];
   }[];
   dailyQuestions: {
     question: string;

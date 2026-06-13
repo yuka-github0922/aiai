@@ -55,6 +55,14 @@ export function buildAiMemories(
 }
 
 /** 作成日時の新しい順に最大 limit 件（ホーム用） */
+/** ホーム「覚えていること」用 — partner_memos のみ（insights は含めない） */
+export function buildAiMemoriesFromMemos(
+  memos: MemoForMemory[],
+  limit = 5
+): AiMemoryItem[] {
+  return memoriesFromMemos(memos, limit);
+}
+
 export function buildAiMemoriesLatest(
   input: BuildAiMemoriesInput,
   limit = 5

@@ -62,7 +62,10 @@ export default async function CouplePage() {
         )}
 
         <CoupleTraitsSection portrait={portrait} />
-        <AiRecentNoticesSection portrait={portrait} />
+        <AiRecentNoticesSection
+          notices={portrait.recentNotices}
+          hasPartner={hasPartner}
+        />
 
         <CoupleSettingsSection
           inviteCode={ctx.couple?.invite_code ?? null}

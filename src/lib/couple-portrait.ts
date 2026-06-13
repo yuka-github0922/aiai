@@ -30,7 +30,9 @@ export type CouplePortrait = {
 
 /**
  * ふたりタブ用ポートレート（現状はテンプレート）。
- * recentNotices は将来 partner_memos / relationship_insights / 相談履歴から生成。
+ * recentNotices は cached_couple_traits.recent_notices（AI 観察レポート）から供給。
+ * ふたりの相談・insights・メモを材料に AI が「最近の変化」として言語化する。
+ * 相談内容のベタ書き・ネガティブな一時感情は表示しない。
  */
 export function buildCouplePortrait(input: CouplePortraitInput): CouplePortrait {
   const selfTrait: PersonTrait = {
@@ -58,20 +60,7 @@ export function buildCouplePortrait(input: CouplePortraitInput): CouplePortrait 
   const traits = input.hasPartner ? [selfTrait, partnerTrait] : [selfTrait];
 
   const recentNotices: AiRecentNotice[] = input.hasPartner
-    ? [
-        {
-          emoji: "💬",
-          label: "最近は気持ちを確認したい話題が増えている",
-        },
-        {
-          emoji: "🏠",
-          label: "住まいについて具体的な話が増えている",
-        },
-        {
-          emoji: "🐶",
-          label: "小春の話になると前向きな会話が多い",
-        },
-      ]
+    ? []
     : [
         {
           emoji: "♡",

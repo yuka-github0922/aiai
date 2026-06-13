@@ -1,17 +1,12 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import type { CouplePortrait } from "@/lib/couple-portrait";
+import type { AiRecentNotice } from "@/lib/couple-portrait";
 import InviteCodeCopy from "@/app/dashboard/invite-code-copy";
 
 const TRAIT_STYLES = [
   "from-rose-50 to-white border-rose-100/80",
   "from-violet-50 to-white border-violet-100/80",
-] as const;
-
-const OBSERVATION_STYLES = [
-  "from-rose-50 to-white border-rose-100/80 shadow-[2px_2px_0_rgba(251,207,232,0.3)]",
-  "from-sky-50 to-white border-sky-100/80 shadow-[2px_2px_0_rgba(125,211,252,0.25)]",
-  "from-amber-50 to-white border-amber-100/80 shadow-[2px_2px_0_rgba(252,211,77,0.2)]",
 ] as const;
 
 type Props = {
@@ -90,40 +85,77 @@ export function CoupleTraitsSection({ portrait }: Pick<Props, "portrait">) {
   );
 }
 
-export function AiRecentNoticesSection({ portrait }: Pick<Props, "portrait">) {
+export function AiRecentNoticesSection({
+  notices,
+  hasPartner,
+}: {
+  notices: AiRecentNotice[];
+  hasPartner: boolean;
+}) {
   return (
-    <section className="aiai-sticker-card px-4 py-5">
-      <div className="mb-4">
-        <p className="text-sm font-black text-gray-800 tracking-tight">
-          <span className="text-violet-400">✦</span> AiAiが最近気づいたこと
+    <section className="aiai-sticker-card overflow-hidden p-0">
+      <header className="border-b border-slate-200/80 bg-gradient-to-r from-slate-50 to-violet-50/40 px-4 py-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[9px] font-bold tracking-[0.28em] text-violet-500">
+            AI REPORT
+          </p>
+          <span className="rounded border border-slate-200 bg-white px-2 py-0.5 text-[9px] font-mono text-slate-400">
+            v1.0
+          </span>
+        </div>
+        <p className="mt-2 text-sm font-black text-gray-800 tracking-tight">
+          AiAiが最近気づいたこと
         </p>
-        <p className="text-[10px] text-violet-400/60 mt-1 tracking-wide">
-          相談の積み重ねから、ふたりの変化をそっと観察しています
+        <p className="mt-1 text-[10px] leading-relaxed text-slate-500">
+          最近の変化・話題の変化を、AIがやさしく観察しています
         </p>
-      </div>
+      </header>
 
-      <ul className="space-y-2.5">
-        {portrait.recentNotices.map((notice, index) => {
-          const style = OBSERVATION_STYLES[index % OBSERVATION_STYLES.length];
-
-          return (
-            <li
-              key={notice.label}
-              className={`flex items-center gap-3 bg-gradient-to-r ${style} rounded-xl px-4 py-3.5 border-2`}
+      {notices.length > 0 ? (
+        <div className="space-y-3 px-4 py-4">
+          {notices.map((notice, index) => (
+            <article
+              key={`${notice.label}-${index}`}
+              className="rounded-r-lg border border-slate-100 border-l-[3px] border-l-violet-400 bg-white px-3.5 py-3 shadow-[0_1px_3px_rgba(15,23,42,0.06)]"
             >
-              <span
-                className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/90 text-lg shrink-0 border border-white shadow-sm"
-                aria-hidden="true"
-              >
-                {notice.emoji}
-              </span>
-              <span className="text-[13px] text-gray-700 leading-snug flex-1 font-medium">
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <p className="text-[9px] font-mono font-bold tracking-wide text-violet-400/90">
+                  FINDING · {String(index + 1).padStart(2, "0")}
+                </p>
+                <span
+                  className="text-sm leading-none opacity-70"
+                  aria-hidden="true"
+                >
+                  {notice.emoji}
+                </span>
+              </div>
+              <p className="text-[13px] leading-relaxed text-slate-700">
                 {notice.label}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
+              </p>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="px-4 py-6 text-center">
+          <p className="text-[10px] font-mono text-violet-300/80 tracking-widest">
+            NO FINDINGS YET
+          </p>
+          <p className="mt-2 text-sm text-gray-500 leading-relaxed">
+            {hasPartner
+              ? "相談やデイリー質問を重ねると、関係の変化がここに現れます"
+              : "パートナーを招待して、ふたりの観察レポートを始めましょう"}
+          </p>
+          <p className="mt-2 text-[10px] text-slate-400 leading-relaxed">
+            相談の内容そのものではなく、変化として言語化しています
+          </p>
+        </div>
+      )}
+
+      <footer className="border-t border-slate-100 bg-slate-50/60 px-4 py-2.5">
+        <p className="text-[9px] font-mono text-slate-400">
+          — end of report · AiAi observation engine
+        </p>
+      </footer>
     </section>
   );
 }

@@ -2,7 +2,7 @@ import {
   requireCoupleAppContext,
   memosWithLabels,
 } from "@/lib/couple-app-data";
-import { buildAiMemoriesLatest } from "@/lib/ai-memories";
+import { buildAiMemoriesFromMemos } from "@/lib/ai-memories";
 import { buildCoupleStats } from "@/lib/couple-stats";
 import { fetchCoupleHomeWorldDisplay } from "@/lib/couple-home-world/fetch-couple-home-world";
 import { ensureCasualConsultation } from "@/lib/ensure-casual-consultation";
@@ -39,10 +39,7 @@ export default async function HomePage() {
   }
   const labeledMemos = memosWithLabels(ctx.memos, ctx.interpretedMemoLabels);
 
-  const aiMemories = buildAiMemoriesLatest(
-    { memos: labeledMemos, insights: [] },
-    5
-  );
+  const aiMemories = buildAiMemoriesFromMemos(labeledMemos, 5);
 
   const coupleStats = buildCoupleStats(ctx.anniversaries);
 

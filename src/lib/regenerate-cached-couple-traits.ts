@@ -1,9 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { formatSupabaseError } from "@/lib/fetch-cached-couple-traits";
 import {
+  buildCoupleObservationsSourceSummary,
   buildCoupleTraitsSourceSummary,
   fetchCoupleTraitsGenerationContext,
 } from "@/lib/couple-traits-context";
+import { generateCoupleObservationsWithAI } from "@/lib/generate-couple-observations";
 import { generateCoupleAvatarWithAI } from "@/lib/generate-couple-avatar";
 import { generateCoupleTraitsWithAI } from "@/lib/generate-couple-traits";
 import { saveCoupleAvatarToStorage } from "@/lib/save-couple-avatar-storage";
@@ -212,7 +214,29 @@ export async function regenerateCachedCoupleTraits(
     return { saved: false, reason: "upsert_error" };
   }
 
+  await saveCoupleObservationsFromContext(supabase, context);
+
   return { saved: true, selfTraits, partnerTraits };
+}
+
+async function saveCoupleObservationsFromContext(
+  supabase: SupabaseClient,
+  context: CoupleTraitsGenerationContext
+): Promise<void> {
+  const generated = await generateCoupleObservationsWithAI(context);
+  if (!generated) return;
+
+  const { error } = await supabase.rpc("upsert_cached_couple_observations", {
+    p_recent_notices: generated.notices,
+    p_source_summary: buildCoupleObservationsSourceSummary(context),
+    p_observations_model: generated.model,
+  });
+
+  if (error) {
+    console.error(
+      formatSupabaseError(error, "[regenerateCachedCoupleTraits] observations upsert")
+    );
+  }
 }
 
 export async function fillMissingCoupleAvatars(
