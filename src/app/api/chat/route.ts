@@ -6,6 +6,12 @@ import { encrypt, decryptMessageBody } from "@/lib/encryption";
 import { fetchRecentDailyQuestionsForChat } from "@/lib/chat-daily-question-context";
 import { fetchChatProfileContext } from "@/lib/chat-profile-context";
 import { buildChatInstructions } from "@/lib/chat-instructions";
+import {
+  buildCasualChatInstructions,
+  CASUAL_RETRY_INSTRUCTIONS,
+  isCasualConsultation,
+  isValidCasualResponse,
+} from "@/lib/casual-chat-instructions";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -97,10 +103,14 @@ export async function POST(request: NextRequest) {
   // --- スレッドタイトルを取得 ---
   const { data: consultationRow } = await supabase
     .from("consultations")
-    .select("title")
+    .select("title, kind")
     .eq("id", consultationId)
     .maybeSingle();
   const consultationTitle = consultationRow?.title ?? null;
+  const isCasual = isCasualConsultation(
+    consultationRow?.kind,
+    consultationTitle
+  );
 
   // --- 自分の会話履歴を取得（先頭3件 + 最新20件）---
   // ※ パートナーの messages は一切 SELECT しない
@@ -163,18 +173,56 @@ export async function POST(request: NextRequest) {
 
   let aiText: string;
   try {
-    const aiResponse = await openai.responses.create({
-      model: "gpt-5.5",
-      instructions: buildChatInstructions(
-        profileContext,
-        partnerInsights,
-        consultationTitle,
-        dailyQuestionRounds
-      ),
-      input,
-    }, { signal: request.signal });
-    aiText = aiResponse.output_text;
+    const instructions = isCasual
+      ? buildCasualChatInstructions(
+          profileContext,
+          partnerInsights,
+          dailyQuestionRounds
+        )
+      : buildChatInstructions(
+          profileContext,
+          partnerInsights,
+          consultationTitle,
+          dailyQuestionRounds
+        );
+
+    const aiResponse = await openai.responses.create(
+      {
+        model: "gpt-5.5",
+        instructions,
+        input,
+      },
+      { signal: request.signal }
+    );
+    aiText = aiResponse.output_text?.trim() ?? "";
     if (!aiText) throw new Error("empty response from OpenAI");
+
+    if (isCasual && !isValidCasualResponse(aiText)) {
+      const retryResponse = await openai.responses.create(
+        {
+          model: "gpt-5.5",
+          instructions: CASUAL_RETRY_INSTRUCTIONS,
+          input: [
+            ...input,
+            { role: "assistant", content: aiText },
+            {
+              role: "user",
+              content:
+                "長すぎます。2〜3文だけ。助言なし。最後は必ず「？」で終わる質問1つにしてください。",
+            },
+          ],
+        },
+        { signal: request.signal }
+      );
+      const retryText = retryResponse.output_text?.trim() ?? "";
+      if (retryText && isValidCasualResponse(retryText)) {
+        aiText = retryText;
+      } else if (retryText) {
+        aiText = ensureCasualQuestionEnding(retryText);
+      } else {
+        aiText = ensureCasualQuestionEnding(aiText);
+      }
+    }
   } catch (err) {
     console.error("[api/chat] OpenAI error:", err);
     return NextResponse.json(
@@ -221,12 +269,14 @@ export async function POST(request: NextRequest) {
     .find((m) => m.role === "user");
 
   if (latestUserMessage) {
-    extractAndSaveInsight(supabase, latestUserMessage.body).catch((err) => {
-      console.error("[api/chat] insight extraction failed (non-fatal):", err);
-    });
     extractAndSaveMemo(supabase, latestUserMessage.body).catch((err) => {
       console.error("[api/chat] memo extraction failed (non-fatal):", err);
     });
+    if (!isCasual) {
+      extractAndSaveInsight(supabase, latestUserMessage.body).catch((err) => {
+        console.error("[api/chat] insight extraction failed (non-fatal):", err);
+      });
+    }
   }
 
   return NextResponse.json({
@@ -235,6 +285,21 @@ export async function POST(request: NextRequest) {
     body: aiText,
     created_at: new Date().toISOString(),
   });
+}
+
+function ensureCasualQuestionEnding(text: string): string {
+  let trimmed = text.trim().replace(/^>+\s?/gm, "").replace(/\n+/g, " ");
+  if (trimmed.length > 120) {
+    const parts = trimmed.split(/(?<=[。！？?!])/);
+    trimmed = parts.slice(0, 2).join("").trim() || trimmed.slice(0, 80);
+  }
+  if (/[?？]$/.test(trimmed)) return trimmed;
+  const withoutAdvice = trimmed
+    .replace(/ポイントは[\s\S]+/, "")
+    .replace(/伝えましょう[\s\S]+/, "")
+    .trim();
+  const base = withoutAdvice.split(/[。！？?!]/)[0]?.trim() || withoutAdvice;
+  return `${base}。今どんな気持ち？`;
 }
 
 // 具体メモ抽出・保存（fire-and-forget）

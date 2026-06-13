@@ -2,6 +2,7 @@ import type { CoupleStats } from "@/lib/couple-stats";
 import type { CoupleHomeWorldDisplay } from "@/lib/couple-home-world/types";
 import CoupleHomeScene from "@/app/dashboard/couple-home-scene";
 import HomeWorldGenerationTrigger from "@/app/dashboard/home-world-generation-trigger";
+import CasualChatComposer from "@/app/dashboard/casual-chat-composer";
 import InviteCodeCopy from "./invite-code-copy";
 
 type Props = {
@@ -11,6 +12,7 @@ type Props = {
   stats: CoupleStats;
   inviteCode: string | null;
   homeWorld: CoupleHomeWorldDisplay | null;
+  casualConsultationId: string | null;
 };
 
 export default function DashboardHero({
@@ -20,6 +22,7 @@ export default function DashboardHero({
   stats,
   inviteCode,
   homeWorld,
+  casualConsultationId,
 }: Props) {
   return (
     <section className="aiai-sticker-card aiai-home-hero-card overflow-hidden">
@@ -67,6 +70,10 @@ export default function DashboardHero({
                   </span>
                 </p>
               )}
+
+              {casualConsultationId ? (
+                <CasualChatComposer consultationId={casualConsultationId} />
+              ) : null}
             </div>
           </div>
 

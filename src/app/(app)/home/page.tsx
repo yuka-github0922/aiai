@@ -5,6 +5,7 @@ import {
 import { buildAiMemoriesLatest } from "@/lib/ai-memories";
 import { buildCoupleStats } from "@/lib/couple-stats";
 import { fetchCoupleHomeWorldDisplay } from "@/lib/couple-home-world/fetch-couple-home-world";
+import { ensureCasualConsultation } from "@/lib/ensure-casual-consultation";
 import { createClient } from "@/lib/supabase/server";
 import { fetchProfileOnboardingData } from "@/lib/profile-onboarding-data";
 import { buildProfileOnboardingProgress } from "@/lib/profile-onboarding-state";
@@ -46,12 +47,15 @@ export default async function HomePage() {
   const coupleStats = buildCoupleStats(ctx.anniversaries);
 
   const supabase = await createClient();
-  const homeWorld = hasPartner
-    ? await fetchCoupleHomeWorldDisplay(
-        supabase,
-        ctx.membership.couple_id as string
-      )
-    : null;
+  const [homeWorld, casualConsultationId] = hasPartner
+    ? await Promise.all([
+        fetchCoupleHomeWorldDisplay(
+          supabase,
+          ctx.membership.couple_id as string
+        ),
+        ensureCasualConsultation(supabase),
+      ])
+    : [null, null];
 
   return (
     <main className="min-h-screen aiai-dashboard-bg relative">
@@ -66,6 +70,7 @@ export default async function HomePage() {
           stats={coupleStats}
           inviteCode={ctx.couple?.invite_code ?? null}
           homeWorld={homeWorld}
+          casualConsultationId={casualConsultationId}
         />
 
         <ProfileOnboardingSection
