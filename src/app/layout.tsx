@@ -45,6 +45,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: THEME_COLOR,
+  colorScheme: "light",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -60,7 +61,7 @@ export default function RootLayout({
       lang="ja"
       className={`${geistSans.variable} ${geistMono.variable} ${notoSerifJp.variable} ${zenKurenaido.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="aiai-light-lock min-h-full flex flex-col">
         {children}
         <RegisterServiceWorker />
       </body>

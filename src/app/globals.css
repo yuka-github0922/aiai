@@ -3,6 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --aiai-surface: #ffffff;
+  --aiai-muted-surface: #f4f7fa;
 }
 
 @theme inline {
@@ -12,17 +14,93 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ライト固定 UI — ブラウザの自動ダーク化を抑止 */
+html {
+  color-scheme: light only;
 }
 
-body {
-  background: var(--background);
+body.aiai-light-lock {
+  background: var(--aiai-muted-surface);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  color-scheme: light only;
+}
+
+.aiai-light-surface {
+  color-scheme: light only;
+}
+
+/*
+ * color-scheme が効かない環境向けフォールバック
+ * （OS ダーク + ブラウザのサイト自動暗色化など）
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #ffffff;
+    --foreground: #171717;
+    --aiai-surface: #ffffff;
+    --aiai-muted-surface: #f4f7fa;
+  }
+
+  html,
+  body.aiai-light-lock {
+    color-scheme: light only;
+    background-color: var(--aiai-muted-surface);
+    color: var(--foreground);
+  }
+
+  body.aiai-light-lock :is(input, textarea, select, button) {
+    color-scheme: light;
+  }
+
+  body.aiai-light-lock .aiai-dashboard-bg,
+  body.aiai-light-lock .aiai-sticker-card,
+  body.aiai-light-lock .aiai-light-surface {
+    color-scheme: light only;
+    color: var(--foreground);
+  }
+
+  body.aiai-light-lock .aiai-sticker-card,
+  body.aiai-light-lock .aiai-light-surface {
+    background-color: var(--aiai-surface);
+    border-color: #ffffff;
+  }
+
+  body.aiai-light-lock header,
+  body.aiai-light-lock nav[aria-label="メインナビゲーション"] {
+    color-scheme: light only;
+    background-color: rgba(255, 255, 255, 0.92);
+    color: var(--foreground);
+  }
+
+  body.aiai-light-lock [class*="bg-white"] {
+    background-color: rgba(255, 255, 255, 0.95);
+  }
+
+  body.aiai-light-lock [class*="bg-gray-50"] {
+    background-color: #f9fafb;
+  }
+
+  body.aiai-light-lock [class*="bg-gray-100"] {
+    background-color: #f3f4f6;
+  }
+
+  body.aiai-light-lock [class*="text-gray-800"] {
+    color: #1f2937;
+  }
+
+  body.aiai-light-lock [class*="text-gray-700"] {
+    color: #374151;
+  }
+
+  body.aiai-light-lock [class*="text-gray-600"] {
+    color: #4b5563;
+  }
+
+  body.aiai-light-lock [class*="text-gray-500"],
+  body.aiai-light-lock [class*="text-gray-400"] {
+    color: #6b7280;
+  }
 }
 
 /* ── Seventeen-inspired dashboard ── */
