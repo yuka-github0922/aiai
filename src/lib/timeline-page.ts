@@ -2,6 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchDailyQuestionTimelineEvents } from "@/lib/daily-question-timeline";
 import { heuristicMemoUnderstanding } from "@/lib/memo-understanding";
 import { buildRecentRecords, type RecentRecord } from "@/lib/recent-records";
+import {
+  DEFAULT_TIMELINE_PERIOD_FILTER,
+  DEFAULT_TIMELINE_SOURCE_FILTER,
+  filterRecentRecords,
+  type TimelineFilters,
+} from "@/lib/timeline-filters";
 import { TIMELINE_PAGE_SIZE } from "@/lib/timeline-constants";
 import type { AnniversaryRow } from "@/lib/nudge";
 import type { MemoForMemory } from "@/lib/ai-memories";
@@ -10,11 +16,16 @@ export type TimelinePageResult = {
   records: RecentRecord[];
   total: number;
   hasMore: boolean;
+  filters: TimelineFilters;
 };
 
 export async function getTimelinePage(
   offset: number,
-  limit: number = TIMELINE_PAGE_SIZE
+  limit: number = TIMELINE_PAGE_SIZE,
+  filters: TimelineFilters = {
+    source: DEFAULT_TIMELINE_SOURCE_FILTER,
+    period: DEFAULT_TIMELINE_PERIOD_FILTER,
+  }
 ): Promise<TimelinePageResult | null> {
   const supabase = await createClient();
   const {
@@ -66,12 +77,14 @@ export async function getTimelinePage(
     timelineEvents: dailyQuestionTimelineEvents,
   });
 
-  const total = allRecords.length;
-  const records = allRecords.slice(offset, offset + limit);
+  const filteredRecords = filterRecentRecords(allRecords, filters);
+  const total = filteredRecords.length;
+  const records = filteredRecords.slice(offset, offset + limit);
 
   return {
     records,
     total,
     hasMore: offset + records.length < total,
+    filters,
   };
 }

@@ -3,6 +3,10 @@ import { requireCoupleAppContext } from "@/lib/couple-app-data";
 import { buildCoupleStats } from "@/lib/couple-stats";
 import { getDailyQuestionRevealCount } from "@/lib/daily-question-stats";
 import { getTimelinePage } from "@/lib/timeline-page";
+import {
+  DEFAULT_TIMELINE_PERIOD_FILTER,
+  DEFAULT_TIMELINE_SOURCE_FILTER,
+} from "@/lib/timeline-filters";
 import AppHeader from "@/components/app/app-header";
 import RecordsStatsSection from "@/app/dashboard/records-stats-section";
 import RecentRecordsSection from "@/app/dashboard/recent-records-section";
@@ -11,7 +15,10 @@ import DashboardDecorations from "@/app/dashboard/dashboard-decorations";
 export default async function RecordsPage() {
   const [ctx, timelinePage] = await Promise.all([
     requireCoupleAppContext(),
-    getTimelinePage(0),
+    getTimelinePage(0, undefined, {
+      source: DEFAULT_TIMELINE_SOURCE_FILTER,
+      period: DEFAULT_TIMELINE_PERIOD_FILTER,
+    }),
   ]);
 
   if (!timelinePage) redirect("/login");
@@ -39,6 +46,7 @@ export default async function RecordsPage() {
           initialRecords={timelinePage.records}
           initialHasMore={timelinePage.hasMore}
           initialTotal={timelinePage.total}
+          initialFilters={timelinePage.filters}
         />
       </div>
     </main>

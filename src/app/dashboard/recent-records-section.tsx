@@ -1,14 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { RecentRecord } from "@/lib/recent-records";
 import { TIMELINE_PAGE_SIZE } from "@/lib/timeline-constants";
+import {
+  buildTimelineSearchParams,
+  DEFAULT_TIMELINE_PERIOD_FILTER,
+  DEFAULT_TIMELINE_SOURCE_FILTER,
+  TIMELINE_PERIOD_OPTIONS,
+  TIMELINE_SOURCE_OPTIONS,
+  timelineEmptyMessage,
+  type TimelineFilters,
+  type TimelinePeriodFilter,
+  type TimelineSourceFilter,
+} from "@/lib/timeline-filters";
 import DailyQuestionRevealModal from "./daily-question-reveal-modal";
 
 type Props = {
   initialRecords: RecentRecord[];
   initialHasMore: boolean;
   initialTotal: number;
+  initialFilters?: TimelineFilters;
   pageSize?: number;
 };
 
@@ -19,6 +31,30 @@ const NODE_STYLES = [
   "bg-sky-200 border-sky-100",
   "bg-pink-200 border-pink-100",
 ] as const;
+
+function FilterChip({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold transition-colors ${
+        active
+          ? "border-violet-300 bg-violet-100 text-violet-700"
+          : "border-gray-200 bg-white text-gray-500 hover:border-violet-200 hover:text-violet-500"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
 
 function TimelineList({
   records,
@@ -95,8 +131,13 @@ export default function RecentRecordsSection({
   initialRecords,
   initialHasMore,
   initialTotal,
+  initialFilters = {
+    source: DEFAULT_TIMELINE_SOURCE_FILTER,
+    period: DEFAULT_TIMELINE_PERIOD_FILTER,
+  },
   pageSize = TIMELINE_PAGE_SIZE,
 }: Props) {
+  const [filters, setFilters] = useState<TimelineFilters>(initialFilters);
   const [records, setRecords] = useState(initialRecords);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [total, setTotal] = useState(initialTotal);
@@ -106,40 +147,59 @@ export default function RecentRecordsSection({
 
   const remaining = Math.max(0, total - records.length);
 
-  async function loadMore() {
-    if (loading || !hasMore) return;
+  const fetchTimeline = useCallback(
+    async (nextFilters: TimelineFilters, offset: number, append: boolean) => {
+      setLoading(true);
+      setError(null);
 
-    setLoading(true);
-    setError(null);
+      try {
+        const params = buildTimelineSearchParams(nextFilters, offset, pageSize);
+        const res = await fetch(`/api/timeline?${params.toString()}`);
 
-    try {
-      const res = await fetch(
-        `/api/timeline?offset=${records.length}&limit=${pageSize}`
-      );
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+        const data: {
+          records: RecentRecord[];
+          total: number;
+          hasMore: boolean;
+          filters: TimelineFilters;
+        } = await res.json();
+
+        setFilters(data.filters);
+        setRecords((prev) =>
+          append ? [...prev, ...data.records] : data.records
+        );
+        setHasMore(data.hasMore);
+        setTotal(data.total);
+      } catch {
+        setError("読み込みに失敗しました。もう一度お試しください。");
+      } finally {
+        setLoading(false);
       }
+    },
+    [pageSize]
+  );
 
-      const data: {
-        records: RecentRecord[];
-        total: number;
-        hasMore: boolean;
-      } = await res.json();
+  function applySourceFilter(source: TimelineSourceFilter) {
+    if (source === filters.source || loading) return;
+    void fetchTimeline({ ...filters, source }, 0, false);
+  }
 
-      setRecords((prev) => [...prev, ...data.records]);
-      setHasMore(data.hasMore);
-      setTotal(data.total);
-    } catch {
-      setError("読み込みに失敗しました。もう一度お試しください。");
-    } finally {
-      setLoading(false);
-    }
+  function applyPeriodFilter(period: TimelinePeriodFilter) {
+    if (period === filters.period || loading) return;
+    void fetchTimeline({ ...filters, period }, 0, false);
+  }
+
+  function loadMore() {
+    if (loading || !hasMore) return;
+    void fetchTimeline(filters, records.length, true);
   }
 
   return (
     <section className="aiai-sticker-card px-4 py-5">
-      <div className="flex items-start justify-between gap-2 mb-4">
+      <div className="flex items-start justify-between gap-2 mb-3">
         <div>
           <p className="text-sm font-black text-gray-800 tracking-tight">
             <span className="text-violet-400">📖</span> 最近のきろく
@@ -156,7 +216,43 @@ export default function RecentRecordsSection({
         </span>
       </div>
 
-      {records.length > 0 ? (
+      <div className="mb-4 space-y-2">
+        <div>
+          <p className="text-[10px] font-bold text-gray-400 mb-1.5 tracking-wide">
+            種類
+          </p>
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {TIMELINE_SOURCE_OPTIONS.map((option) => (
+              <FilterChip
+                key={option.value}
+                label={option.label}
+                active={filters.source === option.value}
+                onClick={() => applySourceFilter(option.value)}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[10px] font-bold text-gray-400 mb-1.5 tracking-wide">
+            期間
+          </p>
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {TIMELINE_PERIOD_OPTIONS.map((option) => (
+              <FilterChip
+                key={option.value}
+                label={option.label}
+                active={filters.period === option.value}
+                onClick={() => applyPeriodFilter(option.value)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {loading && records.length === 0 ? (
+        <div className="text-center py-8 text-sm text-gray-400">読み込み中...</div>
+      ) : records.length > 0 ? (
         <>
           <TimelineList
             records={records}
@@ -194,7 +290,7 @@ export default function RecentRecordsSection({
       ) : (
         <div className="text-center py-6 px-3 rounded-xl border-2 border-dashed border-violet-200/50 bg-violet-50/20">
           <p className="text-sm text-gray-500 leading-relaxed">
-            相談や記念日が増えると、ふたりのきろくがここに並んでいくよ
+            {timelineEmptyMessage(filters)}
           </p>
         </div>
       )}
